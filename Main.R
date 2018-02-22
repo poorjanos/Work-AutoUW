@@ -217,13 +217,81 @@ auw_prod_media <- auw_prod_media_attempt %>%
   gather(MUTATO, PCT, -IDOSZAK, -MODTYP, -PAPIR_TIPUS)
 
 
-# Plot Product Line Metrics
+# Plot Product Line & Media Metrics
 ggplot(auw_prod_media, aes(IDOSZAK, PCT, group = MUTATO, colour = MUTATO)) +
   geom_line(size = 1) +
   geom_point(size = 1.5, shape = 15) +
   scale_y_continuous(labels = percent) +
   theme(axis.text.x = element_text(angle = 90, size = 6)) +
   facet_grid(MODTYP ~ PAPIR_TIPUS) +
+  labs(y = "Százlékos arány",
+       x = "Hónap",
+       colour = "Mérõszám") +
+  geom_jitter()
+
+
+# Compute AutoUW KPIs for TPML per Each Contact Type ####################################
+autouw_tpml <- autouw_df %>% filter(MODTYP == "GFB")
+
+# Compute Attempt Rate for Each Product Line & Media
+auw_tpml_ctype_attempt <-  autouw_tpml %>%
+  mutate(ATTEMPT = case_when(.$KPM %in% c("Sikeres", "Sikertelen") ~ 'I',
+                             TRUE ~ 'N')) %>%
+  group_by(IDOSZAK, GFB_KOTES_NEV, ATTEMPT) %>%
+  summarise (TOTAL = n()) %>%
+  ungroup() %>%
+  tidyr::complete(IDOSZAK, GFB_KOTES_NEV, ATTEMPT, fill = list(TOTAL = 0)) %>%
+  replace_na(list(GFB_KOTES_NEV = "Egyéb")) %>% 
+  group_by(IDOSZAK, GFB_KOTES_NEV) %>%
+  mutate(KISERELT = TOTAL / sum(TOTAL)) %>%
+  mutate_all(funs(replace(., is.nan(.), 0))) %>%
+  filter(ATTEMPT == "I") %>%
+  select(IDOSZAK, GFB_KOTES_NEV, KISERELT)
+
+
+# Compute Success Rate for TPML per Each Contact Type 
+auw_tpml_ctype_success_total <-  autouw_tpml %>%
+  group_by(IDOSZAK, GFB_KOTES_NEV, KPM) %>%
+  summarise (SUBTOTAL = n()) %>%
+  ungroup() %>%
+  tidyr::complete(IDOSZAK, GFB_KOTES_NEV, KPM, fill = list(SUBTOTAL = 0)) %>%
+  replace_na(list(GFB_KOTES_NEV = "Egyéb")) %>% 
+  group_by(IDOSZAK, GFB_KOTES_NEV, KPM = KPM == "Sikeres") %>%
+  ungroup() %>%
+  group_by(IDOSZAK, GFB_KOTES_NEV, KPM) %>%
+  summarize(TOTAL = sum(SUBTOTAL)) %>%
+  mutate(SIKER_PER_TOTAL = TOTAL / sum(TOTAL)) %>%
+  mutate_all(funs(replace(., is.nan(.), 0))) %>%
+  filter(KPM == 1) %>%
+  select(IDOSZAK, GFB_KOTES_NEV, SIKER_PER_TOTAL)
+
+
+# Compute Success Rate for TPML per Each Contact Type 
+auw_tpml_ctype_success_attemp <-  autouw_tpml %>%
+  filter(KPM != "Nincs") %>%
+  group_by(IDOSZAK, GFB_KOTES_NEV, KPM) %>%
+  summarise (TOTAL = n()) %>%
+  mutate(SIKER_PER_KISERELT = TOTAL / sum(TOTAL)) %>%
+  filter(KPM == "Sikeres") %>%
+  select(IDOSZAK, GFB_KOTES_NEV, SIKER_PER_KISERELT)
+
+
+# Merge KPI Results for TPML per Each Contact Type
+auw_tpml_ctype <- auw_tpml_ctype_attempt %>%
+  left_join(auw_tpml_ctype_success_total,
+            by = c("IDOSZAK", "GFB_KOTES_NEV")) %>%
+  left_join(auw_tpml_ctype_success_attemp,
+            by = c("IDOSZAK", "GFB_KOTES_NEV")) %>%
+  gather(MUTATO, PCT, -IDOSZAK, -GFB_KOTES_NEV)
+
+
+# Plot TPML per Each Contact Type Metrics
+ggplot(auw_tpml_ctype, aes(IDOSZAK, PCT, group = MUTATO, colour = MUTATO)) +
+  geom_line(size = 1) +
+  geom_point(size = 1.5, shape = 15) +
+  scale_y_continuous(labels = percent) +
+  theme(axis.text.x = element_text(angle = 90, size = 6)) +
+  facet_grid(. ~ GFB_KOTES_NEV) +
   labs(y = "Százlékos arány",
        x = "Hónap",
        colour = "Mérõszám") +
