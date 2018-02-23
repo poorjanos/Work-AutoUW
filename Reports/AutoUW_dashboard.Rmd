@@ -1,0 +1,142 @@
+---
+title: "Untitled"
+output: 
+  flexdashboard::flex_dashboard:
+    orientation: columns
+    vertical_layout: fill
+---
+
+```{r setup, include=FALSE}
+library(flexdashboard)
+library(dplyr)
+library(tidyr)
+library(ggplot2)
+library(lubridate)
+library(plotly)
+library(scales)
+```
+
+
+About {data-navmenu="Explore"}
+===================================== 
+
+Column {data-width=200}
+-------------------------------------
+
+### About this flexdashboard
+
+This dashboard allows you to explore trends in house prices across 30 large metro areas. The metro areas covered are depicted in the nearby map.  The map is colored  according to Census regions.  We picked the 30 largest metro areas based on population. Explore the different data visualizations above.
+
+Column {data-width=800}
+-------------------------------------
+
+### Areas covered
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+
+
+Storyboard {.storyboard data-navmenu="Explore"}
+=========================================
+
+### Map of areas we plot
+
+```{r}
+
+```
+
+### Small multiple, House Price Index
+
+```{r}
+
+
+```
+
+### Small multiple, Annual house price appreciation
+
+```{r}
+
+
+```
+
+### House Price Growth in West Region
+
+```{r}
+
+```
+
+### House Price Growth in South Region
+
+```{r}
+
+```
+
+
+### House Price Growth in Midwest Region
+
+```{r}
+
+```
+
+### House Price Growth in Northeast Region
+
+```{r}
+
+```
+
+
+
+
+Storyboard2 {.storyboard data-navmenu="Explore"}
+=========================================
+
+### Map of areas we plot
+
+```{r}
+
+```
+
+### Small multiple, House Price Index
+
+```{r}
+
+
+```
+
+### Small multiple, Annual house price appreciation
+
+```{r}
+
+
+```
+
+### House Price Growth in West Region
+
+```{r}
+
+```
+
+### House Price Growth in South Region
+
+```{r}
+
+```
+
+
+### House Price Growth in Midwest Region
+
+```{r}
+
+```
+
+### House Price Growth in Northeast Region
+
+```{r}
+
+```
