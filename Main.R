@@ -28,10 +28,16 @@ library(RJDBC)
 ablak <-
   config::get("ablak" , file = "C:\\Users\\PoorJ\\Projects\\config.yml")
 
-# Create connection driver and open connection
+kontakt <-
+  config::get("kontakt" , file = "C:\\Users\\PoorJ\\Projects\\config.yml")
+
+
+# Create connection driver 
 jdbcDriver <-
   JDBC(driverClass = "oracle.jdbc.OracleDriver", classPath = "C:\\Users\\PoorJ\\Desktop\\ojdbc7.jar")
 
+
+# Open connection: ablak ----------------------------------------------------------------
 jdbcConnection <-
   dbConnect(
     jdbcDriver,
@@ -55,8 +61,27 @@ autouw_dict <- dbGetQuery(jdbcConnection, query_autouw_dict)
 autouw_error_freq <- dbGetQuery(jdbcConnection, query_error_freq)
 autouw_error_pattern <- dbGetQuery(jdbcConnection, query_error_pattern)
 
+# Close db connection: ablak
+dbDisconnect(jdbcConnection)
 
-# Close db connection
+
+# Open connection: kontakt---------------------------------------------------------------
+jdbcConnection <-
+  dbConnect(
+    jdbcDriver,
+    url = kontakt$server,
+    user = kontakt$uid,
+    password = kontakt$pwd
+  )
+
+# Fetch data
+query_autouw_cost <- "select * from t_kpm_err_pattern_cost_history"
+query_num_wdays <- "select * from t_mnap"
+
+autouw_cost <- dbGetQuery(jdbcConnection, query_autouw_cost)
+num_wdays <- dbGetQuery(jdbcConnection, query_num_wdays)
+
+# Close db connection: kontakt
 dbDisconnect(jdbcConnection)
 
 
@@ -74,7 +99,7 @@ autouw_main <-  autouw_main %>%
                             TRUE ~ .$MODTYP))
 
 
-# Compute autoUW main KPIs ##############################################################
+# Compute autoUW main KPIs --------------------------------------------------------------
 # Compute attempt rate
 auw_attempt <-  autouw_main %>%
   mutate(ATTEMPT = case_when(.$KPM %in% c("Sikeres", "Sikertelen") ~ 'I',
@@ -124,7 +149,7 @@ ggplot(auw_main, aes(IDOSZAK, PCT, group = MUTATO, colour = MUTATO)) +
 
 
 
-# Compute autoUW KPIs for each product line #############################################
+# Compute autoUW KPIs for each product line ---------------------------------------------
 # Compute attempt rate for each product line
 auw_prod_attempt <-  autouw_main %>%
   mutate(ATTEMPT = case_when(.$KPM %in% c("Sikeres", "Sikertelen") ~ 'I',
@@ -179,7 +204,7 @@ ggplot(auw_prod, aes(IDOSZAK, PCT, group = MUTATO, colour = MUTATO)) +
 
 
 
-# Compute autoUW KPIs for each product line  & media ####################################
+# Compute autoUW KPIs for each product line  & media ------------------------------------
 # Compute attempt rate for each product line & media
 auw_prod_media_attempt <-  autouw_main %>%
   mutate(ATTEMPT = case_when(.$KPM %in% c("Sikeres", "Sikertelen") ~ 'I',
@@ -243,7 +268,7 @@ ggplot(auw_prod_media, aes(IDOSZAK, PCT, group = MUTATO, colour = MUTATO)) +
   geom_jitter()
 
 
-# Compute autoUW KPIs for TPML per each contact type ####################################
+# Compute autoUW KPIs for TPML per each contact type ------------------------------------
 autouw_tpml <- autouw_main %>% filter(MODTYP == "GFB")
 
 # Compute attempt rate for each product line & media
@@ -316,19 +341,29 @@ ggplot(auw_tpml_ctype, aes(IDOSZAK, PCT, group = MUTATO, colour = MUTATO)) +
 #########################################################################################
 
 # Transformations
+# Extract freqs from last 3 months to get valid understanding of present root-causes
 autouw_error_freq <-
-  autouw_error_freq[!is.na(autouw_error_freq$MODTYP), ]
-autouw_error_freq$IDOSZAK <-
-  paste0(substr(autouw_error_freq$IDOSZAK, 1, 4), "/", substr((autouw_error_freq$IDOSZAK), 6, 7))
+  autouw_error_freq[!is.na(autouw_error_freq$MODTYP),]
 
 autouw_error_freq <-  autouw_error_freq %>%
   mutate(MODTYP = case_when(.$MODTYP == "Vagyon" ~ "Lakás",
                             TRUE ~ .$MODTYP)) %>%
   left_join(autouw_dict, by = c("HIBAAZON"))
 
+autouw_error_freq_last3 <-
+  autouw_error_freq %>% filter(ymd_hms(IDOSZAK) >= floor_date(Sys.Date(), unit = "month") - months(3))
+
+autouw_error_freq_last3$IDOSZAK <-
+  paste0(substr(autouw_error_freq_last3$IDOSZAK, 1, 4), "/", substr((autouw_error_freq_last3$IDOSZAK), 6, 7))
+
+autouw_error_freq$IDOSZAK <-
+  paste0(substr(autouw_error_freq$IDOSZAK, 1, 4), "/", substr((autouw_error_freq$IDOSZAK), 6, 7))
+
+
+
 
 # Freq of errors for whole dataset
-freq <- autouw_error_freq %>%
+freq <- autouw_error_freq_last3 %>%
   group_by(HIBAAZON, HIBA) %>%
   summarize(TOTAL = n()) %>%
   ungroup() %>%
@@ -347,7 +382,7 @@ ggplot(freq, aes(x = factor(freq$HIBA, levels = freq$HIBA[order(freq$GYAKORISAG)
 
 
 # Freq of errors per prod line
-freq_prod <- autouw_error_freq %>%
+freq_prod <- autouw_error_freq_last3 %>%
   group_by(MODTYP, HIBAAZON, HIBA) %>%
   summarize(TOTAL = n()) %>%
   arrange(MODTYP, desc(TOTAL)) %>%
@@ -370,7 +405,8 @@ ggplot(freq_prod, aes(
   facet_grid(. ~ MODTYP)
 
 
-# Freq time series for most common errors per prod line
+# Freq time series for most common errors (of last 3 months) per prod line
+# Most common errors extracted from last 3 months then track them backwards in time
 most_common <- unique(freq_prod$HIBAAZON)
 autouw_error_freq_mc <- autouw_error_freq %>% 
                         filter(HIBAAZON %in% most_common)
@@ -416,17 +452,28 @@ ggplot(freq_prod_mc[freq_prod_mc$MODTYP == "Lakás",],
 #########################################################################################
 
 # Transformations
+# Extract patterns from last 3 months to get valid understanding of present root-causes
 autouw_error_pattern <-
   autouw_error_pattern[!is.na(autouw_error_pattern$MODTYP), ]
-autouw_error_pattern$IDOSZAK <-
-  paste0(substr(autouw_error_pattern$IDOSZAK, 1, 4), "/", substr((autouw_error_pattern$IDOSZAK), 6, 7))
 
 autouw_error_pattern <-  autouw_error_pattern %>%
   mutate(MODTYP = case_when(.$MODTYP == "Vagyon" ~ "Lakás",
-                            TRUE ~ .$MODTYP)) 
+                            TRUE ~ .$MODTYP))
+
+autouw_error_pattern_last3 <-
+  autouw_error_pattern %>% filter(ymd_hms(IDOSZAK) >= floor_date(Sys.Date(), unit = "month") - months(3))
+
+autouw_error_pattern$IDOSZAK <-
+  paste0(substr(autouw_error_pattern$IDOSZAK, 1, 4), "/", substr((autouw_error_pattern$IDOSZAK), 6, 7))
+
+autouw_error_pattern_last3$IDOSZAK <-
+  paste0(substr(autouw_error_pattern_last3$IDOSZAK, 1, 4),
+         "/",
+         substr((autouw_error_pattern_last3$IDOSZAK), 6, 7))
+
 
 # Freq of patterns per prod line
-freq_pattern <- autouw_error_pattern %>%
+freq_pattern <- autouw_error_pattern_last3 %>%
   group_by(MODTYP, HIBA_MINTA) %>%
   summarize(TOTAL = n()) %>%
   arrange(MODTYP, desc(TOTAL)) %>%
@@ -450,21 +497,88 @@ ggplot(freq_pattern, aes(
        x = "Hiba") +
   facet_grid(. ~ MODTYP)
 
-# Separate elems of pattern
-# max_elems <- max(str_count(freq_pattern$HIBA_MINTA, '_')) + 1
-# sep_col_names <- sapply(seq(max_elems), function(x) paste0('elem', x))
-# freq_pattern <- freq_pattern %>%
-#                 separate(HIBA_MINTA, sep_col_names, '_', convert = TRUE)
-# 
-# freq_pattern[is.na(freq_pattern)] <- 0
 
-# Join with dictionary to get error names
-# for (i in seq_along(sep_col_names)){
-#   start_col_name <- colnames(freq_pattern)[i]
-#   colnames(freq_pattern)[i] <- "HIBAAZON"
-#   freq_pattern <- freq_pattern %>% left_join(autouw_dict, by=c("HIBAAZON"))
-#   colnames(freq_pattern)[i] <- start_col_name
-#   new_col_name <- paste0("HIBA", i)
-#   colnames(freq_pattern)[length(freq_pattern)] <- new_col_name
-#   freq_pattern[is.na(freq_pattern[new_col_name]), new_col_name] <- ''
-# }
+# Freq time series for most common patterns per prod line
+most_common_pattern <- unique(freq_pattern$HIBA_MINTA)
+autouw_error_pattern_mc <- autouw_error_pattern %>% 
+                        filter(HIBA_MINTA %in% most_common_pattern)
+
+error_prod_mc <- autouw_error_pattern_mc %>%
+  group_by(IDOSZAK, MODTYP, HIBA_MINTA) %>%
+  summarize(TOTAL = n()) %>%
+  arrange(IDOSZAK, MODTYP, desc(TOTAL)) %>%
+  ungroup() %>%
+  group_by(IDOSZAK, MODTYP) %>%
+  mutate(GYAKORISAG = TOTAL / sum(TOTAL))
+
+
+ggplot(error_prod_mc[error_prod_mc$MODTYP == "GFB",],
+       aes(
+         x = IDOSZAK,
+         y = GYAKORISAG,
+         group = 1
+       )) +
+  geom_line(size = 1) +
+  geom_point(size = 1, shape = 15) +
+  scale_y_continuous(label = percent) +
+  theme(axis.text.x = element_text(angle = 90, size = 5)) +
+  facet_wrap(~HIBA_MINTA, ncol = 8, labeller = label_wrap_gen(width=25))
+
+
+ggplot(error_prod_mc[error_prod_mc$MODTYP == "Lakás",],
+       aes(
+         x = IDOSZAK,
+         y = GYAKORISAG,
+         group = 1
+       )) +
+  geom_line(size = 1) +
+  geom_point(size = 1, shape = 15) +
+  scale_y_continuous(label = percent) +
+  theme(axis.text.x = element_text(angle = 90, size = 5)) +
+  facet_wrap(~HIBA_MINTA, ncol = 8, labeller = label_wrap_gen(width=25))
+
+
+
+#########################################################################################
+# Analyze Error Pattern Costs  ##########################################################
+#########################################################################################
+
+# Transformations
+autouw_cost <-
+  autouw_cost[!is.na(autouw_cost$MODTYP), ]
+
+autouw_cost <-  autouw_cost %>%
+  mutate(MODTYP = case_when(.$MODTYP == "Vagyon" ~ "Lakás",
+                            TRUE ~ .$MODTYP))
+
+
+# Compute monthly total cost -----------------------------------------------------------
+cost_monthly <- autouw_cost %>%
+  group_by(IDOSZAK) %>%
+  summarize(HIBA_IDO = sum(IDO_PERC)) %>%
+  ungroup() %>%
+  left_join(num_wdays, by = c("IDOSZAK")) %>%
+  mutate(FTE = HIBA_IDO / 60 / 7 / MNAP,
+         IDOSZAK = paste0(substr(IDOSZAK, 1, 4), "/", substr((IDOSZAK), 6, 7))) %>% 
+  left_join(auw_main[auw_main$MUTATO == "SIKER_PER_TELJES", ], by=c("IDOSZAK")) %>% 
+  rename(SIKER_PER_TELJES = PCT) %>% 
+  select(IDOSZAK, FTE, SIKER_PER_TELJES)
+
+
+ggplot(cost_monthly, aes(x = IDOSZAK, group = 1)) +
+  geom_line(aes(y = SIKER_PER_TELJES, colour = 'siker')) +
+  geom_line(aes(y = FTE/30, colour = "fte")) +
+  scale_y_continuous(labels = percent, sec.axis = sec_axis(~.*30, name = "FTE [db]")) +
+  theme(axis.text.x = element_text(angle = 90)) +
+  scale_colour_manual(values = c("blue", "red")) +
+  labs(y = "Sikerarány [%]",
+       x = "Idõszak",
+       colour = "Paraméter")
+
+
+
+
+
+
+
+

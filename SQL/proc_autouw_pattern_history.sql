@@ -1,20 +1,23 @@
-/* Formatted on 2018.02.26. 9:21:32 (QP5 v5.115.810.9015) */
+/* Formatted on 2018.02.26. 12:12:18 (QP5 v5.115.810.9015) */
 CREATE OR REPLACE PROCEDURE POORJ.kpm_minta_naplo
 IS
 BEGIN
-   INSERT INTO t_kpm_error_pattern_history (szerzazon,
+   INSERT INTO t_kpm_error_pattern_history (vonalkod,
+                                            szerzazon,
                                             idoszak,
                                             modtyp,
                                             papir_tipus,
                                             gfb_kotes_nev,
                                             hiba_minta)
-      SELECT   szerzazon,
+      SELECT   vonalkod,
+               szerzazon,
                idoszak,
                modtyp,
                papir_tipus,
                gfb_kotes_nev,
                SUBSTR (trace, 0, INSTR (trace, '***0') - 1) AS hiba_minta
-        FROM   (SELECT   szerzazon,
+        FROM   (SELECT   vonalkod,
+                         szerzazon,
                          idoszak,
                          modtyp,
                          papir_tipus,
@@ -44,6 +47,7 @@ BEGIN
                          || e12
                             AS trace
                   FROM   (SELECT   DISTINCT
+                                   vonalkod,
                                    szerzazon,
                                    idoszak,
                                    modtyp,
@@ -119,7 +123,8 @@ BEGIN
                                             ORDER BY hibaazon
                                             ROWS UNBOUNDED PRECEDING)
                                       e14
-                            FROM   (SELECT   szerzazon,
+                            FROM   (SELECT   vonalkod,
+                                             szerzazon,
                                              idoszak,
                                              modtyp,
                                              papir_tipus,
@@ -232,6 +237,7 @@ BEGIN
                                              hibaazon
                                       FROM   (SELECT   c.*, d.hiba
                                                 FROM   (  SELECT   DISTINCT
+                                                                   vonalkod,
                                                                    a.szerzazon,
                                                                    modtyp,
                                                                    papir_tipus,
