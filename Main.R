@@ -5,6 +5,7 @@ library(scales)
 library(dplyr)
 library(lubridate)
 library(tidyr)
+library(stringr)
 
 
 #########################################################################################
@@ -44,15 +45,15 @@ readQuery <-
     function(file)
       paste(readLines(file, warn = FALSE), collapse = "\n")
 
-error_freq <- readQuery(here::here("SQL", "autouw_error_freq.sql"))
-error_pattern <- readQuery(here::here("SQL", "autouw_error_pattern_string.sql"))
+query_error_freq <- readQuery(here::here("SQL", "autouw_error_freq.sql"))
+query_error_pattern <- "select * from t_kpm_error_pattern_history"
 query_autouw <- "select * from t_kpm_history"
 query_autouw_dict <- "select * from t_autouw_dict"
 
-autouw_error_freq <- dbGetQuery(jdbcConnection, query_autouw)
+autouw <- dbGetQuery(jdbcConnection, query_autouw)
 autouw_dict <- dbGetQuery(jdbcConnection, query_autouw_dict)
-autouw_error_freq <- dbGetQuery(jdbcConnection, error_freq)
-autouw_error_pattern <- dbGetQuery(jdbcConnection, error_pattern)
+autouw_error_freq <- dbGetQuery(jdbcConnection, query_error_freq)
+autouw_error_pattern <- dbGetQuery(jdbcConnection, query_error_pattern)
 
 
 # Close db connection
@@ -64,18 +65,18 @@ dbDisconnect(jdbcConnection)
 #########################################################################################
 
 # Transformations
-autouw_error_freq <- autouw_error_freq[!is.na(autouw_error_freq$MODTYP),]
-autouw_error_freq$IDOSZAK <-
-  paste0(substr(autouw_error_freq$IDOSZAK, 1, 4), "/", substr((autouw_error_freq$IDOSZAK), 6, 7))
+autouw_main <- autouw[!is.na(autouw$MODTYP),]
+autouw_main$IDOSZAK <-
+  paste0(substr(autouw_main$IDOSZAK, 1, 4), "/", substr((autouw_main$IDOSZAK), 6, 7))
 
-autouw_error_freq <-  autouw_error_freq %>%
+autouw_main <-  autouw_main %>%
   mutate(MODTYP = case_when(.$MODTYP == "Vagyon" ~ "Lakás",
                             TRUE ~ .$MODTYP))
 
 
 # Compute autoUW main KPIs ##############################################################
 # Compute attempt rate
-auw_attempt <-  autouw_error_freq %>%
+auw_attempt <-  autouw_main %>%
   mutate(ATTEMPT = case_when(.$KPM %in% c("Sikeres", "Sikertelen") ~ 'I',
                              TRUE ~ 'N')) %>%
   group_by(IDOSZAK, ATTEMPT) %>%
@@ -86,7 +87,7 @@ auw_attempt <-  autouw_error_freq %>%
 
 
 # Compute success rate within total
-auw_success_total <-  autouw_error_freq %>%
+auw_success_total <-  autouw_main %>%
   group_by(IDOSZAK, KPM) %>%
   summarise (TOTAL = n()) %>%
   mutate(SIKER_PER_TELJES = TOTAL / sum(TOTAL)) %>%
@@ -95,7 +96,7 @@ auw_success_total <-  autouw_error_freq %>%
 
 
 # Compute success rate within attempted
-auw_success_attempt <-  autouw_error_freq %>%
+auw_success_attempt <-  autouw_main %>%
   filter(KPM != "Nincs") %>%
   group_by(IDOSZAK, KPM) %>%
   summarise (TOTAL = n()) %>%
@@ -125,7 +126,7 @@ ggplot(auw_main, aes(IDOSZAK, PCT, group = MUTATO, colour = MUTATO)) +
 
 # Compute autoUW KPIs for each product line #############################################
 # Compute attempt rate for each product line
-auw_prod_attempt <-  autouw_error_freq %>%
+auw_prod_attempt <-  autouw_main %>%
   mutate(ATTEMPT = case_when(.$KPM %in% c("Sikeres", "Sikertelen") ~ 'I',
                              TRUE ~ 'N')) %>%
   group_by(IDOSZAK, MODTYP, ATTEMPT) %>%
@@ -137,7 +138,7 @@ auw_prod_attempt <-  autouw_error_freq %>%
 
 
 # Compute success rate for each product line within total
-auw_prod_success_total <-   autouw_error_freq %>%
+auw_prod_success_total <-   autouw_main %>%
   group_by(IDOSZAK, MODTYP, KPM) %>%
   summarise (TOTAL = n()) %>%
   mutate(SIKER_PER_TELJES = TOTAL / sum(TOTAL)) %>%
@@ -149,7 +150,7 @@ auw_prod_success_total <-   autouw_error_freq %>%
 
 
 # Compute success rate for each product line within attempted
-auw_prod_success_attempt <-   autouw_error_freq %>%
+auw_prod_success_attempt <-   autouw_main %>%
   filter(KPM != "Nincs") %>%
   group_by(IDOSZAK, MODTYP, KPM) %>%
   summarise (TOTAL = n()) %>%
@@ -180,7 +181,7 @@ ggplot(auw_prod, aes(IDOSZAK, PCT, group = MUTATO, colour = MUTATO)) +
 
 # Compute autoUW KPIs for each product line  & media ####################################
 # Compute attempt rate for each product line & media
-auw_prod_media_attempt <-  autouw_error_freq %>%
+auw_prod_media_attempt <-  autouw_main %>%
   mutate(ATTEMPT = case_when(.$KPM %in% c("Sikeres", "Sikertelen") ~ 'I',
                              TRUE ~ 'N')) %>%
   group_by(IDOSZAK, MODTYP, PAPIR_TIPUS, ATTEMPT) %>%
@@ -195,7 +196,7 @@ auw_prod_media_attempt <-  autouw_error_freq %>%
 
 
 # Compute success rate for each product line & media within attempted
-auw_prod_media_success_total <-  autouw_error_freq %>%
+auw_prod_media_success_total <-  autouw_main %>%
   group_by(IDOSZAK, MODTYP, PAPIR_TIPUS, KPM) %>%
   summarise (SUBTOTAL = n()) %>%
   ungroup() %>%
@@ -211,7 +212,7 @@ auw_prod_media_success_total <-  autouw_error_freq %>%
 
 
 # Compute success rate for each product line & media within attempted
-auw_prod_media_success_attemp <-  autouw_error_freq %>%
+auw_prod_media_success_attemp <-  autouw_main %>%
   filter(KPM != "Nincs") %>%
   group_by(IDOSZAK, MODTYP, PAPIR_TIPUS, KPM) %>%
   summarise (TOTAL = n()) %>%
@@ -243,7 +244,7 @@ ggplot(auw_prod_media, aes(IDOSZAK, PCT, group = MUTATO, colour = MUTATO)) +
 
 
 # Compute autoUW KPIs for TPML per each contact type ####################################
-autouw_tpml <- autouw_error_freq %>% filter(MODTYP == "GFB")
+autouw_tpml <- autouw_main %>% filter(MODTYP == "GFB")
 
 # Compute attempt rate for each product line & media
 auw_tpml_ctype_attempt <-  autouw_tpml %>%
