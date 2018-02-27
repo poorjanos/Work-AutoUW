@@ -568,17 +568,81 @@ cost_monthly <- autouw_cost %>%
 ggplot(cost_monthly, aes(x = IDOSZAK, group = 1)) +
   geom_line(aes(y = SIKER_PER_TELJES, colour = 'siker')) +
   geom_line(aes(y = FTE/30, colour = "fte")) +
+  geom_point(aes(y = SIKER_PER_TELJES, colour = 'siker')) +
+  geom_point(aes(y = FTE/30, colour = "fte")) +
   scale_y_continuous(labels = percent, sec.axis = sec_axis(~.*30, name = "FTE [db]")) +
   theme(axis.text.x = element_text(angle = 90)) +
   scale_colour_manual(values = c("blue", "red")) +
   labs(y = "Sikerarány [%]",
        x = "Idõszak",
-       colour = "Paraméter")
+       colour = "Paraméter") +
+  theme(legend.position = c(0.8, 0.9))
 
 
+# Compute monthly total cost per prod line ----------------------------------------------
+cost_prod_monthly <- autouw_cost %>%
+  group_by(IDOSZAK, MODTYP) %>%
+  summarize(HIBA_IDO = sum(IDO_PERC)) %>%
+  ungroup() %>%
+  left_join(num_wdays, by = c("IDOSZAK")) %>%
+  mutate(FTE = HIBA_IDO / 60 / 7 / MNAP,
+         IDOSZAK = paste0(substr(IDOSZAK, 1, 4), "/", substr((IDOSZAK), 6, 7))) %>% 
+  left_join(auw_prod[auw_prod$MUTATO == "SIKER_PER_TELJES", ], by=c("IDOSZAK", "MODTYP")) %>% 
+  rename(SIKER_PER_TELJES = PCT) %>% 
+  select(IDOSZAK, MODTYP, FTE, SIKER_PER_TELJES)
 
 
+ggplot(cost_prod_monthly, aes(x = IDOSZAK, group = 1)) +
+  geom_line(aes(y = SIKER_PER_TELJES, colour = 'siker')) +
+  geom_line(aes(y = FTE/20, colour = "fte")) +
+  geom_point(aes(y = SIKER_PER_TELJES, colour = 'siker')) +
+  geom_point(aes(y = FTE/20, colour = "fte")) +
+  scale_y_continuous(labels = percent, sec.axis = sec_axis(~.*20, name = "FTE [db]")) +
+  theme(axis.text.x = element_text(angle = 90)) +
+  scale_colour_manual(values = c("blue", "red")) +
+  labs(y = "Sikerarány [%]",
+       x = "Idõszak",
+       colour = "Paraméter") +
+  theme(legend.position = c(0.95, 0.95)) +
+  coord_cartesian(ylim = c(0.0, 0.7)) +
+  facet_grid(.~MODTYP)
 
 
+# Compute monthly total cost per error pattern ------------------------------------------
+# NOTE: normalized FTE computed for last 3 months: must make sure both FTE and N are computed
+# for 3 months period
+wdays_last3 <-
+  num_wdays %>% filter(
+    ymd_hms(IDOSZAK) >= floor_date(Sys.Date(), unit = "month") - months(3) &
+      ymd_hms(IDOSZAK) < floor_date(Sys.Date(), unit = "month")
+  ) %>%
+  select(MNAP) %>% sum
+
+fte_last3 <- autouw_cost %>%
+  filter(ymd_hms(IDOSZAK) >= floor_date(Sys.Date(), unit = "month") - months(3)) %>% 
+  group_by(MODTYP, HIBA_MINTA) %>%
+  summarize(HIBA_IDO = sum(IDO_PERC)) %>%
+  ungroup() %>%
+  mutate(FTE = HIBA_IDO / 60 / 7 / wdays_last3) 
+
+cost_pattern_last3 <- freq_pattern %>% left_join(fte_last3, by = c("MODTYP", "HIBA_MINTA")) %>% 
+  mutate(FAJL_FTE = FTE/TOTAL*1000) %>% 
+  select(MODTYP, HIBA_MINTA, GYAKORISAG, FTE, FAJL_FTE) %>% 
+  arrange(MODTYP, desc(FTE))
+
+
+ggplot(cost_pattern_last3, aes(
+  x = factor(cost_pattern_last3$HIBA_MINTA, levels = cost_pattern_last3$HIBA_MINTA[order(cost_pattern_last3$GYAKORISAG)]),
+  y = FTE
+)) +
+  geom_bar(stat = "identity") +
+  scale_x_discrete(
+    labels = function(x)
+      str_wrap(x, width = 140)
+  ) +
+  coord_flip() +
+  labs(y = "Havi FTE igény",
+       x = "Hiba") +
+  facet_grid(. ~ MODTYP)
 
 
