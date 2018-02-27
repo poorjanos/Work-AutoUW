@@ -1,9 +1,10 @@
 ---
-title: "Untitled"
+title: "Automatikus kötvényesítés havi riport"
 output: 
   flexdashboard::flex_dashboard:
     orientation: columns
     vertical_layout: fill
+    theme: readable
 ---
 
 ```{r setup, include=FALSE}
@@ -17,83 +18,149 @@ library(scales)
 ```
 
 
-About {data-navmenu="Explore"}
+Bevezetõ {data-navmenu="Tartalom"}
 ===================================== 
 
-Column {data-width=200}
+Column {data-width=300}
 -------------------------------------
 
-### About this flexdashboard
+### Mirõl szól ez a riport?
 
-This dashboard allows you to explore trends in house prices across 30 large metro areas. The metro areas covered are depicted in the nearby map.  The map is colored  according to Census regions.  We picked the 30 largest metro areas based on population. Explore the different data visualizations above.
+* A kötvényesítési folyamatban keletkezõ költségek csökkentésének egyik eszköze az automatikus kötvényesítés (központi menesztés). A riport célja, hogy rendszeres adatszolgáltatást nyújtson az automatizmus mûködésének kiértékeléséhez és segítse annak további optimalizációját.  
+* A riport hónapról hónapra követi az automatikus kötvényesítés 
+    + sikerességét,
+    + a hibaokok és hibamintázatok összetételét, 
+    + és azon költségek alakulását, melyet a sikertelen ágon szenved el vállalat manuális munkaerõ-szükséglet formájában.
+* Használat: a fenti *Tartalom* gombra kattintva további lapok nyithatók mag
 
-Column {data-width=800}
+Column {data-width=700}
 -------------------------------------
 
-### Areas covered
+### Sikerarány és a hibaág manuális feldolgozásának FTE igénye 
 
-```{r}
+```{r, fig.width = 8}
+cost_monthly <- read.csv(here::here("Data", "p1_cost_monthly.csv"))
 
+ggplot(cost_monthly, aes(x = IDOSZAK, group = 1)) +
+  geom_line(aes(y = SIKER_PER_TELJES, colour = 'Sikerarány')) +
+  geom_line(aes(y = FTE/30, colour = "FTE igény")) +
+  geom_point(aes(y = SIKER_PER_TELJES, colour = 'Sikerarány')) +
+  geom_point(aes(y = FTE/30, colour = "FTE igény")) +
+  scale_y_continuous(labels = percent, sec.axis = sec_axis(~.*30, name = "Sikertelen ág manuáli FTE igénye [db]")) +
+  theme(axis.text.x = element_text(angle = 90)) +
+  scale_colour_manual(values = c("blue", "red")) +
+  labs(y = "Sikerarány a teljes feldlgozott állományban [%]",
+       x = "Idõszak",
+       colour = "Mutató") +
+  theme(legend.position = c(0.8, 0.9))
 ```
 
-```{r}
-
-```
 
 
-
-Storyboard {.storyboard data-navmenu="Explore"}
+Sikerarány {.storyboard data-navmenu="Tartalom"}
 =========================================
 
-### Map of areas we plot
+### Ezen az ábrán automatikus kötvényesítés sikerességét a **teljes állományon** értékelük ki több mutató mentén 
 
-```{r}
+```{r, fig.width=10}
+auw_main <- read.csv(here::here("Data", "p2_auw_main.csv"))
 
+ggplot(auw_main, aes(IDOSZAK, PCT, group = MUTATO, colour = MUTATO)) +
+  geom_line(size = 1) +
+  geom_point(size = 3, shape = 15) +
+  scale_y_continuous(labels = percent) +
+  theme(axis.text.x = element_text(angle = 90)) +
+  labs(y = "Százlékos arány [%]",
+       x = "Idõszak",
+       colour = "Mutató")
 ```
 
-### Small multiple, House Price Index
+***
+Az automatiks kötvényesítés teljesítményét három mutató alapján értékelhetjük:
 
-```{r}
+- **KISERELT**: a kísérlet, próbálkozás aránya, azaz az állomány mekkora hányadán futtott az adott idõszakban automatikus menesztés
+- **SIKER_PER_KISERELT**: sikerarány azon állományon, melyet az automatika megkísérelt elmeneszteni (magyarul, ahol futott központi menesztés)
+- **SIKER_PER_TELJES**: sikerarány a teljes állományon, tehát azt a halmazt is számításba véve, ahol nem fut központi menesztés
 
+### Ezen az ábrán automatikus kötvényesítés sikerességét **termékcsoportonként** értékelük ki több mutató mentén
 
+```{r, fig.width=12, fig.height=6}
+auw_prod <- read.csv(here::here("Data", "p2_auw_prod.csv"))
+
+ggplot(auw_prod, aes(IDOSZAK, PCT, group = MUTATO, colour = MUTATO)) +
+  geom_line(size = 1) +
+  geom_point(size = 3, shape = 15) +
+  scale_y_continuous(labels = percent) +
+  theme(axis.text.x = element_text(angle = 90, size = 8)) +
+  facet_grid(. ~ MODTYP) +
+  labs(y = "Százlékos arány [%]",
+       x = "Idõszak",
+       colour = "Mutató") +
+  theme(legend.position = c(0.9, 0.8))
 ```
 
-### Small multiple, Annual house price appreciation
+***
+Az automatiks kötvényesítés teljesítményét három mutató alapján értékelhetjük:
 
-```{r}
+- **KISERELT**: a kísérlet, próbálkozás aránya, azaz az állomány mekkora hányadán futtott az adott idõszakban automatikus menesztés
+- **SIKER_PER_KISERELT**: sikerarány azon állományon, melyet az automatika megkísérelt elmeneszteni (magyarul, ahol futott központi menesztés)
+- **SIKER_PER_TELJES**: sikerarány a teljes állományon, tehát azt a halmazt is számításba véve, ahol nem fut központi menesztés
 
+### Ezen az ábrán automatikus kötvényesítés sikerességét **termékcsoportonként** és **kötési módonként** értékelük ki több mutató mentén
 
+```{r, fig.width=12, fig.height=6}
+auw_prod_media <- read.csv(here::here("Data", "p2_auw_prod_media.csv"))
+
+ggplot(auw_prod_media, aes(IDOSZAK, PCT, group = MUTATO, colour = MUTATO)) +
+  geom_line(size = 1) +
+  geom_point(size = 1.5, shape = 15) +
+  scale_y_continuous(labels = percent) +
+  theme(axis.text.x = element_text(angle = 90, size = 5),
+        legend.position = "bottom") +
+  facet_grid(MODTYP ~ PAPIR_TIPUS) +
+  labs(y = "Százlékos arány [%]",
+       x = "Idõszak",
+       colour = "Mutató") +
+  geom_jitter()
 ```
 
-### House Price Growth in West Region
+***
+Az automatiks kötvényesítés teljesítményét három mutató alapján értékelhetjük:
 
-```{r}
+- **KISERELT**: a kísérlet, próbálkozás aránya, azaz az állomány mekkora hányadán futtott az adott idõszakban automatikus menesztés
+- **SIKER_PER_KISERELT**: sikerarány azon állományon, melyet az automatika megkísérelt elmeneszteni (magyarul, ahol futott központi menesztés)
+- **SIKER_PER_TELJES**: sikerarány a teljes állományon, tehát azt a halmazt is számításba véve, ahol nem fut központi menesztés
 
+### Ezen az ábrán automatikus kötvényesítés sikerességét a **KGFB** termékcsoporton és annak **kötési okaiként** értékelük ki több mutató mentén
+
+```{r fig.width=12, fig.height=6}
+auw_tpml_ctype <- read.csv(here::here("Data", "p2_auw_tpml_ctype.csv"))
+
+ggplot(auw_tpml_ctype, aes(IDOSZAK, PCT, group = MUTATO, colour = MUTATO)) +
+  geom_line(size = 1) +
+  geom_point(size = 1.5, shape = 15) +
+  scale_y_continuous(labels = percent) +
+  theme(axis.text.x = element_text(angle = 90, size = 6),
+        legend.position = "bottom") +
+  facet_grid(. ~ GFB_KOTES_NEV) +
+  labs(y = "Százlékos arány [%]",
+       x = "Idõsuak",
+       colour = "Mérõszám") +
+  geom_jitter()
 ```
 
-### House Price Growth in South Region
+***
+Az automatiks kötvényesítés teljesítményét három mutató alapján értékelhetjük:
 
-```{r}
-
-```
-
-
-### House Price Growth in Midwest Region
-
-```{r}
-
-```
-
-### House Price Growth in Northeast Region
-
-```{r}
-
-```
+- **KISERELT**: a kísérlet, próbálkozás aránya, azaz az állomány mekkora hányadán futtott az adott idõszakban automatikus menesztés
+- **SIKER_PER_KISERELT**: sikerarány azon állományon, melyet az automatika megkísérelt elmeneszteni (magyarul, ahol futott központi menesztés)
+- **SIKER_PER_TELJES**: sikerarány a teljes állományon, tehát azt a halmazt is számításba véve, ahol nem fut központi menesztés
 
 
 
 
-Storyboard2 {.storyboard data-navmenu="Explore"}
+
+Storyboard2 {.storyboard data-navmenu="Tartalom"}
 =========================================
 
 ### Map of areas we plot

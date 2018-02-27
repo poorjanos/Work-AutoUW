@@ -7,6 +7,10 @@ library(lubridate)
 library(tidyr)
 library(stringr)
 
+# Create dirs (dir.create() does not crash when dir already exists)
+dir.create(here::here("Data"), showWarnings = FALSE)
+dir.create(here::here("Reports"), showWarnings = FALSE)
+dir.create(here::here("SQL"), showWarnings = FALSE)
 
 #########################################################################################
 # Data Extraction #######################################################################
@@ -129,6 +133,7 @@ auw_success_attempt <-  autouw_main %>%
   filter(KPM == "Sikeres") %>%
   select(IDOSZAK, SIKER_PER_KISERELT)
 
+
 # Merge KPI results
 auw_main <- auw_attempt %>%
   left_join(auw_success_attempt, by = "IDOSZAK") %>%
@@ -136,17 +141,10 @@ auw_main <- auw_attempt %>%
   gather(MUTATO, PCT, -IDOSZAK)
 
 
-# Plot main metrics
-ggplot(auw_main, aes(IDOSZAK, PCT, group = MUTATO, colour = MUTATO)) +
-  geom_line(size = 1) +
-  geom_point(size = 3, shape = 15) +
-  scale_y_continuous(labels = percent) +
-  theme(axis.text.x = element_text(angle = 90)) +
-  labs(y = "Százlékos arány",
-       x = "Hónap",
-       colour = "Mérõszám")
-
-
+# Save for dashboard output
+write.csv(auw_main,
+          here::here("Data", "p2_auw_main.csv"),
+          row.names = FALSE)
 
 
 # Compute autoUW KPIs for each product line ---------------------------------------------
@@ -191,17 +189,10 @@ auw_prod <- auw_prod_attempt %>%
   gather(MUTATO, PCT, -IDOSZAK, -MODTYP)
 
 
-# Plot product line metrics
-ggplot(auw_prod, aes(IDOSZAK, PCT, group = MUTATO, colour = MUTATO)) +
-  geom_line(size = 1) +
-  geom_point(size = 3, shape = 15) +
-  scale_y_continuous(labels = percent) +
-  theme(axis.text.x = element_text(angle = 90)) +
-  facet_grid(. ~ MODTYP) +
-  labs(y = "Százlékos arány",
-       x = "Hónap",
-       colour = "Mérõszám")
-
+# Save for dashboard output
+write.csv(auw_prod,
+          here::here("Data", "p2_auw_prod.csv"),
+          row.names = FALSE)
 
 
 # Compute autoUW KPIs for each product line  & media ------------------------------------
@@ -255,17 +246,11 @@ auw_prod_media <- auw_prod_media_attempt %>%
   gather(MUTATO, PCT, -IDOSZAK, -MODTYP, -PAPIR_TIPUS)
 
 
-# Plot product line & media metrics
-ggplot(auw_prod_media, aes(IDOSZAK, PCT, group = MUTATO, colour = MUTATO)) +
-  geom_line(size = 1) +
-  geom_point(size = 1.5, shape = 15) +
-  scale_y_continuous(labels = percent) +
-  theme(axis.text.x = element_text(angle = 90, size = 6)) +
-  facet_grid(MODTYP ~ PAPIR_TIPUS) +
-  labs(y = "Százlékos arány",
-       x = "Hónap",
-       colour = "Mérõszám") +
-  geom_jitter()
+# Save for dashboard output
+write.csv(auw_prod_media,
+          here::here("Data", "p2_auw_prod_media.csv"),
+          row.names = FALSE)
+
 
 
 # Compute autoUW KPIs for TPML per each contact type ------------------------------------
@@ -323,17 +308,10 @@ auw_tpml_ctype <- auw_tpml_ctype_attempt %>%
   gather(MUTATO, PCT, -IDOSZAK, -GFB_KOTES_NEV)
 
 
-# Plot TPML per each contact type metrics
-ggplot(auw_tpml_ctype, aes(IDOSZAK, PCT, group = MUTATO, colour = MUTATO)) +
-  geom_line(size = 1) +
-  geom_point(size = 1.5, shape = 15) +
-  scale_y_continuous(labels = percent) +
-  theme(axis.text.x = element_text(angle = 90, size = 6)) +
-  facet_grid(. ~ GFB_KOTES_NEV) +
-  labs(y = "Százlékos arány",
-       x = "Hónap",
-       colour = "Mérõszám") +
-  geom_jitter()
+# Save for dashboard output
+write.csv(auw_tpml_ctype,
+          here::here("Data", "p2_auw_tpml_ctype.csv"),
+          row.names = FALSE)
 
 
 #########################################################################################
@@ -564,19 +542,9 @@ cost_monthly <- autouw_cost %>%
   rename(SIKER_PER_TELJES = PCT) %>% 
   select(IDOSZAK, FTE, SIKER_PER_TELJES)
 
-
-ggplot(cost_monthly, aes(x = IDOSZAK, group = 1)) +
-  geom_line(aes(y = SIKER_PER_TELJES, colour = 'siker')) +
-  geom_line(aes(y = FTE/30, colour = "fte")) +
-  geom_point(aes(y = SIKER_PER_TELJES, colour = 'siker')) +
-  geom_point(aes(y = FTE/30, colour = "fte")) +
-  scale_y_continuous(labels = percent, sec.axis = sec_axis(~.*30, name = "FTE [db]")) +
-  theme(axis.text.x = element_text(angle = 90)) +
-  scale_colour_manual(values = c("blue", "red")) +
-  labs(y = "Sikerarány [%]",
-       x = "Idõszak",
-       colour = "Paraméter") +
-  theme(legend.position = c(0.8, 0.9))
+write.csv(cost_monthly,
+          here::here("Data", "p1_cost_monthly.csv"),
+          row.names = FALSE)
 
 
 # Compute monthly total cost per prod line ----------------------------------------------
