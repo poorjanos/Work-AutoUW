@@ -338,8 +338,6 @@ autouw_error_freq$IDOSZAK <-
   paste0(substr(autouw_error_freq$IDOSZAK, 1, 4), "/", substr((autouw_error_freq$IDOSZAK), 6, 7))
 
 
-
-
 # Freq of errors for whole dataset
 freq <- autouw_error_freq_last3 %>%
   group_by(HIBAAZON, HIBA) %>%
@@ -350,13 +348,12 @@ freq <- autouw_error_freq_last3 %>%
          GYAK_KUM = cumsum(GYAKORISAG)) %>%
   filter(GYAKORISAG >= 0.01)
 
-ggplot(freq, aes(x = factor(freq$HIBA, levels = freq$HIBA[order(freq$GYAKORISAG)]), y = GYAKORISAG)) +
-  geom_bar(stat = "identity") +
-  scale_y_continuous(label = percent) +
-  #theme_minimal() +
-  coord_flip() +
-  labs(y = "Relatív gyakoriság",
-       x = "Hiba")
+
+# Save for dashboard output
+write.csv(freq, 
+          here::here("Data", "p3_error_freq.csv"),
+          row.names = FALSE)
+
 
 
 # Freq of errors per prod line
@@ -369,18 +366,11 @@ freq_prod <- autouw_error_freq_last3 %>%
   mutate(GYAKORISAG = TOTAL / sum(TOTAL)) %>%
   filter(GYAKORISAG >= 0.01)
 
-ggplot(freq_prod, aes(
-  x = factor(freq_prod$HIBA, levels = freq_prod$HIBA[order(freq_prod$GYAKORISAG)]),
-  y = GYAKORISAG
-)) +
-  geom_bar(stat = "identity") +
-  scale_y_continuous(label = percent) +
-  #theme_minimal() +
-  coord_flip() +
-  labs(y = "Relatív gyakoriság",
-       x = "Hiba") +
-  
-  facet_grid(. ~ MODTYP)
+
+# Save for dashboard output
+write.csv(freq_prod, 
+          here::here("Data", "p3_error_freq_prod.csv"),
+          row.names = FALSE)
 
 
 # Freq time series for most common errors (of last 3 months) per prod line
@@ -398,30 +388,10 @@ freq_prod_mc <- autouw_error_freq_mc %>%
   mutate(GYAKORISAG = TOTAL / sum(TOTAL))
 
 
-ggplot(freq_prod_mc[freq_prod_mc$MODTYP == "GFB",],
-       aes(
-         x = IDOSZAK,
-         y = GYAKORISAG,
-         group = 1
-       )) +
-  geom_line(size = 1) +
-  geom_point(size = 1, shape = 15) +
-  scale_y_continuous(label = percent) +
-  theme(axis.text.x = element_text(angle = 90, size = 5)) +
-  facet_wrap(~HIBA, ncol = 8, labeller = label_wrap_gen(width=20))
-
-
-ggplot(freq_prod_mc[freq_prod_mc$MODTYP == "Lakás",],
-       aes(
-         x = IDOSZAK,
-         y = GYAKORISAG,
-         group = 1
-       )) +
-  geom_line(size = 1) +
-  geom_point(size = 1, shape = 15) +
-  scale_y_continuous(label = percent) +
-  theme(axis.text.x = element_text(angle = 90, size = 5)) +
-  facet_wrap(~HIBA, ncol = 8, labeller = label_wrap_gen(width=20))
+# Save for dashboard output
+write.csv(freq_prod_mc, 
+          here::here("Data", "p3_error_freq_prod_mc.csv"),
+          row.names = FALSE)
 
 
 
@@ -450,8 +420,25 @@ autouw_error_pattern_last3$IDOSZAK <-
          substr((autouw_error_pattern_last3$IDOSZAK), 6, 7))
 
 
-# Freq of patterns per prod line
+# Freq of patterns for whole dataset
 freq_pattern <- autouw_error_pattern_last3 %>%
+  group_by(HIBA_MINTA) %>%
+  summarize(TOTAL = n()) %>%
+  ungroup() %>%
+  arrange(desc(TOTAL)) %>%
+  mutate(GYAKORISAG = TOTAL / sum(TOTAL),
+         GYAK_KUM = cumsum(GYAKORISAG)) %>%
+  filter(GYAKORISAG >= 0.01)
+
+
+# Save for dashboard output
+write.csv(freq_pattern, 
+          here::here("Data", "p4_error_freq_pattern.csv"),
+          row.names = FALSE)
+
+
+# Freq of patterns per prod line
+freq_pattern_prod <- autouw_error_pattern_last3 %>%
   group_by(MODTYP, HIBA_MINTA) %>%
   summarize(TOTAL = n()) %>%
   arrange(MODTYP, desc(TOTAL)) %>%
@@ -461,19 +448,11 @@ freq_pattern <- autouw_error_pattern_last3 %>%
   filter(GYAKORISAG >= 0.01)
 
 
-ggplot(freq_pattern, aes(
-  x = factor(freq_pattern$HIBA_MINTA, levels = freq_pattern$HIBA_MINTA[order(freq_pattern$GYAKORISAG)]),
-  y = GYAKORISAG
-)) +
-  geom_bar(stat = "identity") +
-  scale_y_continuous(label = percent) +
-  scale_x_discrete(labels = function(x) str_wrap(x, width = 140)) +
-  theme(axis.text.y = element_text(size = 7.5)) +
-  #theme_minimal() +
-  coord_flip() +
-  labs(y = "Relatív gyakoriság",
-       x = "Hiba") +
-  facet_grid(. ~ MODTYP)
+# Save for dashboard output
+write.csv(freq_pattern_prod, 
+          here::here("Data", "p4_error_freq_pattern_prod.csv"),
+          row.names = FALSE)
+
 
 
 # Freq time series for most common patterns per prod line
@@ -490,30 +469,10 @@ error_prod_mc <- autouw_error_pattern_mc %>%
   mutate(GYAKORISAG = TOTAL / sum(TOTAL))
 
 
-ggplot(error_prod_mc[error_prod_mc$MODTYP == "GFB",],
-       aes(
-         x = IDOSZAK,
-         y = GYAKORISAG,
-         group = 1
-       )) +
-  geom_line(size = 1) +
-  geom_point(size = 1, shape = 15) +
-  scale_y_continuous(label = percent) +
-  theme(axis.text.x = element_text(angle = 90, size = 5)) +
-  facet_wrap(~HIBA_MINTA, ncol = 8, labeller = label_wrap_gen(width=25))
-
-
-ggplot(error_prod_mc[error_prod_mc$MODTYP == "Lakás",],
-       aes(
-         x = IDOSZAK,
-         y = GYAKORISAG,
-         group = 1
-       )) +
-  geom_line(size = 1) +
-  geom_point(size = 1, shape = 15) +
-  scale_y_continuous(label = percent) +
-  theme(axis.text.x = element_text(angle = 90, size = 5)) +
-  facet_wrap(~HIBA_MINTA, ncol = 8, labeller = label_wrap_gen(width=25))
+# Save for dashboard output
+write.csv(error_prod_mc, 
+          here::here("Data", "p4_error_freq_pattern_prod_mc.csv"),
+          row.names = FALSE)
 
 
 
@@ -542,6 +501,8 @@ cost_monthly <- autouw_cost %>%
   rename(SIKER_PER_TELJES = PCT) %>% 
   select(IDOSZAK, FTE, SIKER_PER_TELJES)
 
+
+# Save for dashboard output
 write.csv(cost_monthly,
           here::here("Data", "p1_cost_monthly.csv"),
           row.names = FALSE)
@@ -560,20 +521,11 @@ cost_prod_monthly <- autouw_cost %>%
   select(IDOSZAK, MODTYP, FTE, SIKER_PER_TELJES)
 
 
-ggplot(cost_prod_monthly, aes(x = IDOSZAK, group = 1)) +
-  geom_line(aes(y = SIKER_PER_TELJES, colour = 'siker')) +
-  geom_line(aes(y = FTE/20, colour = "fte")) +
-  geom_point(aes(y = SIKER_PER_TELJES, colour = 'siker')) +
-  geom_point(aes(y = FTE/20, colour = "fte")) +
-  scale_y_continuous(labels = percent, sec.axis = sec_axis(~.*20, name = "FTE [db]")) +
-  theme(axis.text.x = element_text(angle = 90)) +
-  scale_colour_manual(values = c("blue", "red")) +
-  labs(y = "Sikerarány [%]",
-       x = "Idõszak",
-       colour = "Paraméter") +
-  theme(legend.position = c(0.95, 0.95)) +
-  coord_cartesian(ylim = c(0.0, 0.7)) +
-  facet_grid(.~MODTYP)
+# Save for dashboard output
+write.csv(cost_prod_monthly,
+          here::here("Data", "p5_cost_prod_monthly.csv"),
+          row.names = FALSE)
+
 
 
 # Compute monthly total cost per error pattern ------------------------------------------
@@ -599,18 +551,9 @@ cost_pattern_last3 <- freq_pattern %>% left_join(fte_last3, by = c("MODTYP", "HI
   arrange(MODTYP, desc(FTE))
 
 
-ggplot(cost_pattern_last3, aes(
-  x = factor(cost_pattern_last3$HIBA_MINTA, levels = cost_pattern_last3$HIBA_MINTA[order(cost_pattern_last3$GYAKORISAG)]),
-  y = FTE
-)) +
-  geom_bar(stat = "identity") +
-  scale_x_discrete(
-    labels = function(x)
-      str_wrap(x, width = 140)
-  ) +
-  coord_flip() +
-  labs(y = "Havi FTE igény",
-       x = "Hiba") +
-  facet_grid(. ~ MODTYP)
+# Save for dashboard output
+write.csv(cost_pattern_last3,
+          here::here("Data", "p5_cost_pattern_last3.csv"),
+          row.names = FALSE)
 
 

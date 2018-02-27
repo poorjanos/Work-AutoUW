@@ -15,6 +15,7 @@ library(ggplot2)
 library(lubridate)
 library(plotly)
 library(scales)
+library(stringr)
 ```
 
 
@@ -60,7 +61,7 @@ ggplot(cost_monthly, aes(x = IDOSZAK, group = 1)) +
 Sikerarány {.storyboard data-navmenu="Tartalom"}
 =========================================
 
-### Ezen az ábrán automatikus kötvényesítés sikerességét a **teljes állományon** értékelük ki több mutató mentén 
+### Ezen az ábrán automatikus kötvényesítés sikerességét a **teljes állományon** értékeljük ki több mutató mentén 
 
 ```{r, fig.width=10}
 auw_main <- read.csv(here::here("Data", "p2_auw_main.csv"))
@@ -82,7 +83,7 @@ Az automatiks kötvényesítés teljesítményét három mutató alapján értékelhetjük:
 - **SIKER_PER_KISERELT**: sikerarány azon állományon, melyet az automatika megkísérelt elmeneszteni (magyarul, ahol futott központi menesztés)
 - **SIKER_PER_TELJES**: sikerarány a teljes állományon, tehát azt a halmazt is számításba véve, ahol nem fut központi menesztés
 
-### Ezen az ábrán automatikus kötvényesítés sikerességét **termékcsoportonként** értékelük ki több mutató mentén
+### Ezen az ábrán automatikus kötvényesítés sikerességét **termékcsoportonként** értékeljük ki több mutató mentén
 
 ```{r, fig.width=12, fig.height=6}
 auw_prod <- read.csv(here::here("Data", "p2_auw_prod.csv"))
@@ -106,7 +107,7 @@ Az automatiks kötvényesítés teljesítményét három mutató alapján értékelhetjük:
 - **SIKER_PER_KISERELT**: sikerarány azon állományon, melyet az automatika megkísérelt elmeneszteni (magyarul, ahol futott központi menesztés)
 - **SIKER_PER_TELJES**: sikerarány a teljes állományon, tehát azt a halmazt is számításba véve, ahol nem fut központi menesztés
 
-### Ezen az ábrán automatikus kötvényesítés sikerességét **termékcsoportonként** és **kötési módonként** értékelük ki több mutató mentén
+### Ezen az ábrán automatikus kötvényesítés sikerességét **termékcsoportonként** és **kötési módonként** értékeljük ki több mutató mentén
 
 ```{r, fig.width=12, fig.height=6}
 auw_prod_media <- read.csv(here::here("Data", "p2_auw_prod_media.csv"))
@@ -131,9 +132,9 @@ Az automatiks kötvényesítés teljesítményét három mutató alapján értékelhetjük:
 - **SIKER_PER_KISERELT**: sikerarány azon állományon, melyet az automatika megkísérelt elmeneszteni (magyarul, ahol futott központi menesztés)
 - **SIKER_PER_TELJES**: sikerarány a teljes állományon, tehát azt a halmazt is számításba véve, ahol nem fut központi menesztés
 
-### Ezen az ábrán automatikus kötvényesítés sikerességét a **KGFB** termékcsoporton és annak **kötési okaiként** értékelük ki több mutató mentén
+### Ezen az ábrán automatikus kötvényesítés sikerességét a **KGFB** termékcsoporton és annak **kötési okaiként** értékeljük ki több mutató mentén
 
-```{r fig.width=12, fig.height=6}
+```{r, fig.width=12, fig.height=6}
 auw_tpml_ctype <- read.csv(here::here("Data", "p2_auw_tpml_ctype.csv"))
 
 ggplot(auw_tpml_ctype, aes(IDOSZAK, PCT, group = MUTATO, colour = MUTATO)) +
@@ -158,52 +159,256 @@ Az automatiks kötvényesítés teljesítményét három mutató alapján értékelhetjük:
 
 
 
-
-
-Storyboard2 {.storyboard data-navmenu="Tartalom"}
+Hibaokok {.storyboard data-navmenu="Tartalom"}
 =========================================
 
-### Map of areas we plot
+### Ezen az ábrán az elmúlt 3 hónapban legtöbbször elõfordult hibaokok relatív gyakoriságát mutatjuk meg a **teljes állományon** 
 
-```{r}
+```{r, fig.width=14, fig.height=6}
+error_freq <- read.csv(here::here("Data", "p3_error_freq.csv"))
 
+ggplot(error_freq, aes(x = factor(error_freq$HIBA, levels = error_freq$HIBA[order(error_freq$GYAKORISAG)]), y = GYAKORISAG)) +
+  geom_bar(stat = "identity") +
+  scale_y_continuous(label = percent) +
+  coord_flip() +
+  labs(y = "Relatív gyakoriság",
+       x = "Hiba")
 ```
 
-### Small multiple, House Price Index
+***
+* A hibaok relatív gyakorisága azt jelenti, hogy a vizsgált idõszakban (jelen esetben a legutolsó 3 hónapban) egy hibaok az összes hibaok mekkora hányadát tette ki, vagyis relatíve mennyire nagy a súlya
+* A teljes állományon számolt arányokon túl termékcsoportonként jelentõsen eltérõ okokat figyelhetünk meg, ezért fontos a hibaokokat termékenként értelmezni (lásd. következõ dia)
 
-```{r}
 
+### Ezen az ábrán az elmúlt 3 hónapban legtöbbször elõfordult hibaokok relatív gyakoriságát mutatjuk meg **termékcsoportonként** 
 
+```{r, fig.width=14, fig.height=6}
+error_freq_prod <- read.csv(here::here("Data", "p3_error_freq_prod.csv"))
+
+ggplot(error_freq_prod, aes(
+  x = factor(error_freq_prod$HIBA, levels = error_freq_prod$HIBA[order(error_freq_prod$GYAKORISAG)]),
+  y = GYAKORISAG
+)) +
+  geom_bar(stat = "identity") +
+  scale_y_continuous(label = percent) +
+  coord_flip() +
+  labs(y = "Relatív gyakoriság",
+       x = "Hiba") +
+  facet_grid(. ~ MODTYP)
 ```
 
-### Small multiple, Annual house price appreciation
+***
+* A hibaok relatív gyakorisága a **termékcsopoton belül** azt jelenti, hogy a vizsgált idõszakban (jelen esetben a legutolsó 3 hónapban) egy hibaok a **termékcsoport esetében számolt** összes hibaok mekkora hányadát tette ki, vagyis relatíve mennyire nagy a termékcsoporton belüli súlya
+* A teljes állományon számolt arányokon túl termékcsoportonként jelentõsen eltérõ okokat figyelhetünk meg, ezért fontos a hibaokokat termékenként értelmezni
+* Megfigyelhetõ, hogy a termékcsoportokra más-más hibaokok jellemzõek, jóllehet néhány esetében közös elõforduás is tapasztalható
 
-```{r}
+### Ezen az ábrán az elmúlt 3 hónapban legtöbbször elõfordult **hibaokok gyakoriságának idõbeli alakulását** mutatjuk meg **a KGFB termékcsoportban** 
 
+```{r, fig.width=14, fig.height=8}
+error_freq_prod_mc <- read.csv(here::here("Data", "p3_error_freq_prod_mc.csv"))
 
+ggplot(error_freq_prod_mc[error_freq_prod_mc$MODTYP == "GFB",],
+       aes(
+         x = IDOSZAK,
+         y = GYAKORISAG,
+         group = 1
+       )) +
+  geom_line(size = 1) +
+  geom_point(size = 1, shape = 15) +
+  scale_y_continuous(label = percent) +
+  theme(axis.text.x = element_text(angle = 90, size = 5),
+        strip.text.x = element_text(size = 12)) +
+  facet_wrap(~HIBA, ncol = 8, labeller = label_wrap_gen(width=20))
 ```
 
-### House Price Growth in West Region
+***
+* Egy adott hibaok gyakoriságának idõbeli alakulásából következtetni lehet olyan eseményekre, melyek befolyásolhatták egy adott hiba egyre gyakoribb, vagy egyre ritkább elõfordulását
+* A pontos beavatkozási területek meghatározásához ugyanakkor nem elegendõ a hibaokok külön-külön vizsgálata, hanem az egymással együtt elõforduló *mintázatok* vizsgálata szükséges
 
-```{r}
 
+### Ezen az ábrán az elmúlt 3 hónapban legtöbbször elõfordult **hibaokok gyakoriságának idõbeli alakulását** mutatjuk meg **a Lakás termékcsoportban** 
+
+```{r, fig.width=14, fig.height=8}
+error_freq_prod_mc <- read.csv(here::here("Data", "p3_error_freq_prod_mc.csv"))
+
+ggplot(error_freq_prod_mc[error_freq_prod_mc$MODTYP == "Lakás",],
+       aes(
+         x = IDOSZAK,
+         y = GYAKORISAG,
+         group = 1
+       )) +
+  geom_line(size = 1) +
+  geom_point(size = 1, shape = 15) +
+  scale_y_continuous(label = percent) +
+  theme(axis.text.x = element_text(angle = 90, size = 5),
+        strip.text.x = element_text(size = 12)) +
+  facet_wrap(~HIBA, ncol = 8, labeller = label_wrap_gen(width=20))
 ```
 
-### House Price Growth in South Region
+***
+* Egy adott hibaok gyakoriságának idõbeli alakulásából következtetni lehet olyan eseményekre, melyek befolyásolhatták egy adott hiba egyre gyakoribb, vagy egyre ritkább elõfordulását
+* A pontos beavatkozási területek meghatározásához ugyanakkor nem elegendõ a hibaokok külön-külön vizsgálata, hanem az egymással együtt elõforduló *mintázatok* vizsgálata szükséges
 
-```{r}
 
+
+
+Hibamintázatok {.storyboard data-navmenu="Tartalom"}
+=========================================
+
+### Ezen az ábrán az elmúlt 3 hónapban legtöbbször elõfordult hibamintázatok relatív gyakoriságát mutatjuk meg a **teljes állományon** 
+
+```{r, fig.width=14, fig.height=6}
+error_freq_pattern <- read.csv(here::here("Data", "p4_error_freq_pattern.csv"))
+
+ggplot(error_freq_pattern, aes(
+  x = factor(error_freq_pattern$HIBA_MINTA, levels = error_freq_pattern$HIBA_MINTA[order(error_freq_pattern$GYAKORISAG)]),
+  y = GYAKORISAG
+  )) +
+  geom_bar(stat = "identity") +
+  scale_y_continuous(label = percent) +
+  coord_flip() +
+  labs(y = "Relatív gyakoriság",
+  x = "Hibamintázat")
 ```
 
+***
+* A hibamintázat együttesen elõforduló hibaokok láncolatát jelenti
+* A hibamintázat pontosabb képet ad arról, hogy az automatikus menesztés miért vallott kudarcot
+* Az egy mintázaton belüli különbözõ hibaokokat három csillag (***) választja el egymástól
+* Vannak mintázatok, melyek mindössze egyetlen okból állnak
+* A hibamintázat relatív gyakorisága azt jelenti, hogy a vizsgált idõszakban (jelen esetben a legutolsó 3 hónapban) egy mintázat az összes mintázat mekkora hányadát tette ki, vagyis relatíve mennyire nagy a súlya
+* A teljes állományon számolt arányokon túl termékcsoportonként jelentõsen eltérõ mintázatokat figyelhetünk meg, ezért fontos a mintázatokat termékenként értelmezni (lásd. következõ dia)
 
-### House Price Growth in Midwest Region
 
-```{r}
+### Ezen az ábrán az elmúlt 3 hónapban legtöbbször elõfordult hibamintázatok relatív gyakoriságát mutatjuk meg **termékcsoportonként** 
 
+```{r, fig.width=14, fig.height=6}
+error_freq_pattern_prod <- read.csv(here::here("Data", "p4_error_freq_pattern_prod.csv"))
+
+ggplot(error_freq_pattern_prod, aes(
+  x = factor(error_freq_pattern_prod$HIBA_MINTA, levels = error_freq_pattern_prod$HIBA_MINTA[order(error_freq_pattern_prod$GYAKORISAG)]),
+  y = GYAKORISAG
+)) +
+  geom_bar(stat = "identity") +
+  scale_y_continuous(label = percent) +
+  scale_x_discrete(labels = function(x) str_wrap(x, width = 140)) +
+  theme(axis.text.y = element_text(size = 7.5)) +
+  coord_flip() +
+  labs(y = "Relatív gyakoriság",
+       x = "Hibamintázat") +
+  facet_grid(. ~ MODTYP)
 ```
 
-### House Price Growth in Northeast Region
+***
+* A hibamintázat együttesen elõforduló hibaokok láncolatát jelenti
+* A hibamintázat pontosabb képet ad arról, hogy az automatikus menesztés miért vallott kudarcot
+* Vannak mintázatok, melyek mindössze egyetlen okból állnak
+* A hibamintázat relatív gyakorisága a termékcsoporton belülazt jelenti, hogy a vizsgált idõszakban (jelen esetben a legutolsó 3 hónapban) egy mintázat a termékcsport esetében megfigyelt összes mintázat mekkora hányadát tette ki, vagyis relatíve mennyire nagy a  termékcsoporton belüli súlya
+* A teljes állományon számolt arányokon túl termékcsoportonként jelentõsen eltérõ mintázatokat figyelhetünk meg, ezért fontos a mintázatokat termékenként értelmezni
 
-```{r}
 
+### Ezen az ábrán az elmúlt 3 hónapban legtöbbször elõfordult **hibamintázat gyakoriságának idõbeli alakulását** mutatjuk meg **a KGFB termékcsoportban** 
+
+```{r, fig.width=14, fig.height=8}
+error_freq_pattern_prod_mc <- read.csv(here::here("Data", "p4_error_freq_pattern_prod_mc.csv"))
+
+ggplot(error_freq_pattern_prod_mc[error_freq_pattern_prod_mc$MODTYP == "GFB",],
+       aes(
+         x = IDOSZAK,
+         y = GYAKORISAG,
+         group = 1
+       )) +
+  geom_line(size = 1) +
+  geom_point(size = 1, shape = 15) +
+  scale_y_continuous(label = percent) +
+  theme(axis.text.x = element_text(angle = 90, size = 5),
+        strip.text.x = element_text(size = 12)) +
+  labs(y = "Relatív gyakoriság",
+       x = "Hibamintázat") +
+  facet_wrap(~HIBA_MINTA, ncol = 8, labeller = label_wrap_gen(width=25))
 ```
+
+***
+* Egy adott hibamintázat gyakoriságának idõbeli alakulásából következtetni lehet olyan eseményekre, melyek befolyásolhatták egy adott hibák egyre gyakoribb, vagy egyre ritkább elõfordulását
+
+
+### Ezen az ábrán az elmúlt 3 hónapban legtöbbször elõfordult **hibaokok gyakoriságának idõbeli alakulását** mutatjuk meg **a Lakás termékcsoportban** 
+
+```{r, fig.width=14, fig.height=8}
+error_freq_pattern_prod_mc <- read.csv(here::here("Data", "p4_error_freq_pattern_prod_mc.csv"))
+
+ggplot(error_freq_pattern_prod_mc[error_freq_pattern_prod_mc$MODTYP == "Lakás",],
+       aes(
+         x = IDOSZAK,
+         y = GYAKORISAG,
+         group = 1
+       )) +
+  geom_line(size = 1) +
+  geom_point(size = 1, shape = 15) +
+  scale_y_continuous(label = percent) +
+  theme(axis.text.x = element_text(angle = 90, size = 5),
+        strip.text.x = element_text(size = 12)) +
+  labs(y = "Relatív gyakoriság",
+       x = "Hiba mintázat") +
+  facet_wrap(~HIBA_MINTA, ncol = 8, labeller = label_wrap_gen(width=25))
+```
+
+***
+* Egy adott hibamintázat gyakoriságának idõbeli alakulásából következtetni lehet olyan eseményekre, melyek befolyásolhatták egy adott hibák egyre gyakoribb, vagy egyre ritkább elõfordulását
+
+
+
+Költségek {.storyboard data-navmenu="Tartalom"}
+=========================================
+
+### Ezen az ábrán az automatikus kötvényesítés hibaágának manuális utókezelésének költségeit mutatjuk meg **termékcsoportonként** idõben
+
+```{r, fig.width=14, fig.height=6}
+cost_prod_monthly <- read.csv(here::here("Data", "p5_cost_prod_monthly.csv"))
+
+ggplot(cost_prod_monthly, aes(x = IDOSZAK, group = 1)) +
+  geom_line(aes(y = SIKER_PER_TELJES, colour = 'Sikerarány')) +
+  geom_line(aes(y = FTE/20, colour = "FTE igény")) +
+  geom_point(aes(y = SIKER_PER_TELJES, colour = 'Sikerarány')) +
+  geom_point(aes(y = FTE/20, colour = "FTE igény")) +
+  scale_y_continuous(labels = percent, sec.axis = sec_axis(~.*20, name = "FTE [db]")) +
+  theme(axis.text.x = element_text(angle = 90)) +
+  scale_colour_manual(values = c("blue", "red")) +
+  labs(y = "Sikerarány [%]",
+       x = "Idõszak",
+       colour = "Mutató") +
+  theme(legend.position = c(0.95, 0.95)) +
+  coord_cartesian(ylim = c(0.0, 0.7)) +
+  facet_grid(.~MODTYP)
+```
+
+***
+* Az automatikus kötvényesítés hibára futása esetén az ajánlatot manuálisan kell feldolgozni
+* A workflow rendszer (Kontakt) minden manuális tevékenységet tárol, így ponosan kiszámolható a hibaág kezelésének FTE igénye
+* Az FTE igény nem egyenlõ a létszámigénnyel, mivel az FTE a tiszta munkaidõigényt mutatja és nem számol a betegségek és szabadságok hatásával
+* A létszámigény meghatározásához az FTE igény +25%-os korrekciója az iparági sztenderd
+* A sikerarány és a manuális munka FTE költség negatív korrelációja jól látható az ábrán: ha a sikerarány csökken, az FTE igény nõ
+
+
+### Ezen az ábrán az elmúlt 3 hónapban legtöbbször elõfordult hibamintázatok havi FTE igényét mutatjuk meg **termékcsoportonként**
+
+```{r, fig.width=14, fig.height=6}
+cost_pattern_last3 <- read.csv(here::here("Data", "p5_cost_pattern_last3.csv"))
+
+ggplot(cost_pattern_last3, aes(
+  x = factor(cost_pattern_last3$HIBA_MINTA, levels = cost_pattern_last3$HIBA_MINTA[order(cost_pattern_last3$GYAKORISAG)]),
+  y = FTE
+)) +
+  geom_bar(stat = "identity") +
+  scale_x_discrete(
+    labels = function(x)
+      str_wrap(x, width = 140)
+  ) +
+  coord_flip() +
+  labs(y = "Havi FTE igény",
+       x = "Hiba mintázat") +
+  facet_grid(. ~ MODTYP)
+```
+
+***
+* A termékcsoportonkénti hiba mintázatok FTE igénye megmutatja a vállalat számára legköltségesebb hibadimenziókat és segít a további optimalizáció irányának kijelölésében
