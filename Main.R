@@ -12,6 +12,10 @@ dir.create(here::here("Data"), showWarnings = FALSE)
 dir.create(here::here("Reports"), showWarnings = FALSE)
 dir.create(here::here("SQL"), showWarnings = FALSE)
 
+# Create constants
+# Set threshold for error relative frequency
+freq_lim = 0.2
+
 #########################################################################################
 # Data Extraction #######################################################################
 #########################################################################################
@@ -346,7 +350,7 @@ freq <- autouw_error_freq_last3 %>%
   arrange(desc(TOTAL)) %>%
   mutate(GYAKORISAG = TOTAL / sum(TOTAL),
          GYAK_KUM = cumsum(GYAKORISAG)) %>%
-  filter(GYAKORISAG >= 0.01)
+  filter(GYAKORISAG >= freq_lim)
 
 
 # Save for dashboard output
@@ -364,7 +368,7 @@ freq_prod <- autouw_error_freq_last3 %>%
   ungroup() %>%
   group_by(MODTYP) %>%
   mutate(GYAKORISAG = TOTAL / sum(TOTAL)) %>%
-  filter(GYAKORISAG >= 0.01)
+  filter(GYAKORISAG >= freq_lim)
 
 
 # Save for dashboard output
@@ -428,7 +432,7 @@ freq_pattern <- autouw_error_pattern_last3 %>%
   arrange(desc(TOTAL)) %>%
   mutate(GYAKORISAG = TOTAL / sum(TOTAL),
          GYAK_KUM = cumsum(GYAKORISAG)) %>%
-  filter(GYAKORISAG >= 0.01)
+  filter(GYAKORISAG >= freq_lim)
 
 
 # Save for dashboard output
@@ -445,7 +449,7 @@ freq_pattern_prod <- autouw_error_pattern_last3 %>%
   ungroup() %>%
   group_by(MODTYP) %>%
   mutate(GYAKORISAG = TOTAL / sum(TOTAL)) %>%
-  filter(GYAKORISAG >= 0.01)
+  filter(GYAKORISAG >= freq_lim)
 
 
 # Save for dashboard output
@@ -454,9 +458,8 @@ write.csv(freq_pattern_prod,
           row.names = FALSE)
 
 
-
 # Freq time series for most common patterns per prod line
-most_common_pattern <- unique(freq_pattern$HIBA_MINTA)
+most_common_pattern <- unique(freq_pattern_prod$HIBA_MINTA)
 autouw_error_pattern_mc <- autouw_error_pattern %>% 
                         filter(HIBA_MINTA %in% most_common_pattern)
 
@@ -545,7 +548,7 @@ fte_last3 <- autouw_cost %>%
   ungroup() %>%
   mutate(FTE = HIBA_IDO / 60 / 7 / wdays_last3) 
 
-cost_pattern_last3 <- freq_pattern %>% left_join(fte_last3, by = c("MODTYP", "HIBA_MINTA")) %>% 
+cost_pattern_last3 <- freq_pattern_prod %>% left_join(fte_last3, by = c("MODTYP", "HIBA_MINTA")) %>% 
   mutate(FAJL_FTE = FTE/TOTAL*1000) %>% 
   select(MODTYP, HIBA_MINTA, GYAKORISAG, FTE, FAJL_FTE) %>% 
   arrange(MODTYP, desc(FTE))

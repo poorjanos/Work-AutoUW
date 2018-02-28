@@ -4,7 +4,7 @@ output:
   flexdashboard::flex_dashboard:
     orientation: columns
     vertical_layout: fill
-    theme: readable
+    theme: cosmo
 ---
 
 ```{r setup, include=FALSE}
@@ -16,6 +16,7 @@ library(lubridate)
 library(plotly)
 library(scales)
 library(stringr)
+library(ggthemes)
 ```
 
 
@@ -49,7 +50,6 @@ ggplot(cost_monthly, aes(x = IDOSZAK, group = 1)) +
   geom_point(aes(y = FTE/30, colour = "FTE igény")) +
   scale_y_continuous(labels = percent, sec.axis = sec_axis(~.*30, name = "Sikertelen ág manuáli FTE igénye [db]")) +
   theme(axis.text.x = element_text(angle = 90)) +
-  scale_colour_manual(values = c("blue", "red")) +
   labs(y = "Sikerarány a teljes feldlgozott állományban [%]",
        x = "Idõszak",
        colour = "Mutató") +
@@ -67,8 +67,8 @@ Sikerarány {.storyboard data-navmenu="Tartalom"}
 auw_main <- read.csv(here::here("Data", "p2_auw_main.csv"))
 
 ggplot(auw_main, aes(IDOSZAK, PCT, group = MUTATO, colour = MUTATO)) +
-  geom_line(size = 1) +
-  geom_point(size = 3, shape = 15) +
+  geom_line() +
+  geom_point() +
   scale_y_continuous(labels = percent) +
   theme(axis.text.x = element_text(angle = 90)) +
   labs(y = "Százlékos arány [%]",
@@ -89,8 +89,8 @@ Az automatiks kötvényesítés teljesítményét három mutató alapján értékelhetjük:
 auw_prod <- read.csv(here::here("Data", "p2_auw_prod.csv"))
 
 ggplot(auw_prod, aes(IDOSZAK, PCT, group = MUTATO, colour = MUTATO)) +
-  geom_line(size = 1) +
-  geom_point(size = 3, shape = 15) +
+  geom_line() +
+  geom_point() +
   scale_y_continuous(labels = percent) +
   theme(axis.text.x = element_text(angle = 90, size = 8)) +
   facet_grid(. ~ MODTYP) +
@@ -113,8 +113,8 @@ Az automatiks kötvényesítés teljesítményét három mutató alapján értékelhetjük:
 auw_prod_media <- read.csv(here::here("Data", "p2_auw_prod_media.csv"))
 
 ggplot(auw_prod_media, aes(IDOSZAK, PCT, group = MUTATO, colour = MUTATO)) +
-  geom_line(size = 1) +
-  geom_point(size = 1.5, shape = 15) +
+  geom_line() +
+  geom_point() +
   scale_y_continuous(labels = percent) +
   theme(axis.text.x = element_text(angle = 90, size = 5),
         legend.position = "bottom") +
@@ -138,8 +138,8 @@ Az automatiks kötvényesítés teljesítményét három mutató alapján értékelhetjük:
 auw_tpml_ctype <- read.csv(here::here("Data", "p2_auw_tpml_ctype.csv"))
 
 ggplot(auw_tpml_ctype, aes(IDOSZAK, PCT, group = MUTATO, colour = MUTATO)) +
-  geom_line(size = 1) +
-  geom_point(size = 1.5, shape = 15) +
+  geom_line() +
+  geom_point() +
   scale_y_continuous(labels = percent) +
   theme(axis.text.x = element_text(angle = 90, size = 6),
         legend.position = "bottom") +
@@ -169,6 +169,7 @@ error_freq <- read.csv(here::here("Data", "p3_error_freq.csv"))
 
 ggplot(error_freq, aes(x = factor(error_freq$HIBA, levels = error_freq$HIBA[order(error_freq$GYAKORISAG)]), y = GYAKORISAG)) +
   geom_bar(stat = "identity") +
+  theme(axis.text.y = element_text(size = 10)) +
   scale_y_continuous(label = percent) +
   coord_flip() +
   labs(y = "Relatív gyakoriság",
@@ -190,6 +191,7 @@ ggplot(error_freq_prod, aes(
   y = GYAKORISAG
 )) +
   geom_bar(stat = "identity") +
+  theme(axis.text.y = element_text(size = 10)) +
   scale_y_continuous(label = percent) +
   coord_flip() +
   labs(y = "Relatív gyakoriság",
@@ -265,6 +267,7 @@ ggplot(error_freq_pattern, aes(
   y = GYAKORISAG
   )) +
   geom_bar(stat = "identity") +
+  theme(axis.text.y = element_text(size = 10)) +
   scale_y_continuous(label = percent) +
   coord_flip() +
   labs(y = "Relatív gyakoriság",
@@ -291,8 +294,8 @@ ggplot(error_freq_pattern_prod, aes(
 )) +
   geom_bar(stat = "identity") +
   scale_y_continuous(label = percent) +
-  scale_x_discrete(labels = function(x) str_wrap(x, width = 140)) +
-  theme(axis.text.y = element_text(size = 7.5)) +
+  scale_x_discrete(labels = function(x) str_wrap(x, width = 200)) +
+  theme(axis.text.y = element_text(size = 10)) +
   coord_flip() +
   labs(y = "Relatív gyakoriság",
        x = "Hibamintázat") +
@@ -363,7 +366,7 @@ Költségek {.storyboard data-navmenu="Tartalom"}
 
 ### Ezen az ábrán az automatikus kötvényesítés hibaágának manuális utókezelésének költségeit mutatjuk meg **termékcsoportonként** idõben
 
-```{r, fig.width=14, fig.height=6}
+```{r, fig.width=12, fig.height=6}
 cost_prod_monthly <- read.csv(here::here("Data", "p5_cost_prod_monthly.csv"))
 
 ggplot(cost_prod_monthly, aes(x = IDOSZAK, group = 1)) +
@@ -373,7 +376,6 @@ ggplot(cost_prod_monthly, aes(x = IDOSZAK, group = 1)) +
   geom_point(aes(y = FTE/20, colour = "FTE igény")) +
   scale_y_continuous(labels = percent, sec.axis = sec_axis(~.*20, name = "FTE [db]")) +
   theme(axis.text.x = element_text(angle = 90)) +
-  scale_colour_manual(values = c("blue", "red")) +
   labs(y = "Sikerarány [%]",
        x = "Idõszak",
        colour = "Mutató") +
@@ -396,13 +398,13 @@ ggplot(cost_prod_monthly, aes(x = IDOSZAK, group = 1)) +
 cost_pattern_last3 <- read.csv(here::here("Data", "p5_cost_pattern_last3.csv"))
 
 ggplot(cost_pattern_last3, aes(
-  x = factor(cost_pattern_last3$HIBA_MINTA, levels = cost_pattern_last3$HIBA_MINTA[order(cost_pattern_last3$GYAKORISAG)]),
+  x = factor(cost_pattern_last3$HIBA_MINTA, levels = cost_pattern_last3$HIBA_MINTA[order(cost_pattern_last3$FTE)]),
   y = FTE
 )) +
   geom_bar(stat = "identity") +
   scale_x_discrete(
     labels = function(x)
-      str_wrap(x, width = 140)
+      str_wrap(x, width = 180)
   ) +
   coord_flip() +
   labs(y = "Havi FTE igény",
