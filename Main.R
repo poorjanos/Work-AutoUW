@@ -14,7 +14,7 @@ dir.create(here::here("SQL"), showWarnings = FALSE)
 
 # Create constants
 # Set threshold for error relative frequency
-freq_lim = 0.2
+freq_lim = 0.02
 
 #########################################################################################
 # Data Extraction #######################################################################
@@ -40,7 +40,7 @@ kontakt <-
   config::get("kontakt" , file = "C:\\Users\\PoorJ\\Projects\\config.yml")
 
 
-# Create connection driver 
+# Create connection driver
 jdbcDriver <-
   JDBC(driverClass = "oracle.jdbc.OracleDriver", classPath = "C:\\Users\\PoorJ\\Desktop\\ojdbc7.jar")
 
@@ -56,10 +56,11 @@ jdbcConnection <-
 
 # Fetch data
 readQuery <-
-    function(file)
-      paste(readLines(file, warn = FALSE), collapse = "\n")
+  function(file)
+    paste(readLines(file, warn = FALSE), collapse = "\n")
 
-query_error_freq <- readQuery(here::here("SQL", "autouw_error_freq.sql"))
+query_error_freq <-
+  readQuery(here::here("SQL", "autouw_error_freq.sql"))
 query_error_pattern <- "select * from t_kpm_error_pattern_history"
 query_autouw <- "select * from t_kpm_history"
 query_autouw_dict <- "select * from t_autouw_dict"
@@ -67,7 +68,8 @@ query_autouw_dict <- "select * from t_autouw_dict"
 autouw <- dbGetQuery(jdbcConnection, query_autouw)
 autouw_dict <- dbGetQuery(jdbcConnection, query_autouw_dict)
 autouw_error_freq <- dbGetQuery(jdbcConnection, query_error_freq)
-autouw_error_pattern <- dbGetQuery(jdbcConnection, query_error_pattern)
+autouw_error_pattern <-
+  dbGetQuery(jdbcConnection, query_error_pattern)
 
 # Close db connection: ablak
 dbDisconnect(jdbcConnection)
@@ -98,7 +100,7 @@ dbDisconnect(jdbcConnection)
 #########################################################################################
 
 # Transformations
-autouw_main <- autouw[!is.na(autouw$MODTYP),]
+autouw_main <- autouw[!is.na(autouw$MODTYP), ]
 autouw_main$IDOSZAK <-
   paste0(substr(autouw_main$IDOSZAK, 1, 4), "/", substr((autouw_main$IDOSZAK), 6, 7))
 
@@ -142,7 +144,7 @@ auw_success_attempt <-  autouw_main %>%
 auw_main <- auw_attempt %>%
   left_join(auw_success_attempt, by = "IDOSZAK") %>%
   left_join(auw_success_total, by = "IDOSZAK") %>%
-  gather(MUTATO, PCT, -IDOSZAK)
+  gather(MUTATO, PCT,-IDOSZAK)
 
 
 # Save for dashboard output
@@ -190,13 +192,14 @@ auw_prod_success_attempt <-   autouw_main %>%
 auw_prod <- auw_prod_attempt %>%
   left_join(auw_prod_success_attempt, by = c("IDOSZAK", "MODTYP")) %>%
   left_join(auw_prod_success_total, by = c("IDOSZAK", "MODTYP")) %>%
-  gather(MUTATO, PCT, -IDOSZAK, -MODTYP)
+  gather(MUTATO, PCT,-IDOSZAK,-MODTYP)
 
 
 # Save for dashboard output
 write.csv(auw_prod,
           here::here("Data", "p2_auw_prod.csv"),
           row.names = FALSE)
+
 
 
 # Compute autoUW KPIs for each product line  & media ------------------------------------
@@ -247,7 +250,7 @@ auw_prod_media <- auw_prod_media_attempt %>%
             by = c("IDOSZAK", "MODTYP", "PAPIR_TIPUS")) %>%
   left_join(auw_prod_media_success_total,
             by = c("IDOSZAK", "MODTYP", "PAPIR_TIPUS")) %>%
-  gather(MUTATO, PCT, -IDOSZAK, -MODTYP, -PAPIR_TIPUS)
+  gather(MUTATO, PCT,-IDOSZAK,-MODTYP,-PAPIR_TIPUS)
 
 
 # Save for dashboard output
@@ -268,7 +271,7 @@ auw_tpml_ctype_attempt <-  autouw_tpml %>%
   summarise (TOTAL = n()) %>%
   ungroup() %>%
   tidyr::complete(IDOSZAK, GFB_KOTES_NEV, ATTEMPT, fill = list(TOTAL = 0)) %>%
-  replace_na(list(GFB_KOTES_NEV = "Egyéb")) %>% 
+  replace_na(list(GFB_KOTES_NEV = "Egyéb")) %>%
   group_by(IDOSZAK, GFB_KOTES_NEV) %>%
   mutate(KISERELT = TOTAL / sum(TOTAL)) %>%
   mutate_all(funs(replace(., is.nan(.), 0))) %>%
@@ -276,13 +279,13 @@ auw_tpml_ctype_attempt <-  autouw_tpml %>%
   select(IDOSZAK, GFB_KOTES_NEV, KISERELT)
 
 
-# Compute success rate for TPML per each kontact type 
+# Compute success rate for TPML per each kontact type
 auw_tpml_ctype_success_total <-  autouw_tpml %>%
   group_by(IDOSZAK, GFB_KOTES_NEV, KPM) %>%
   summarise (SUBTOTAL = n()) %>%
   ungroup() %>%
   tidyr::complete(IDOSZAK, GFB_KOTES_NEV, KPM, fill = list(SUBTOTAL = 0)) %>%
-  replace_na(list(GFB_KOTES_NEV = "Egyéb")) %>% 
+  replace_na(list(GFB_KOTES_NEV = "Egyéb")) %>%
   group_by(IDOSZAK, GFB_KOTES_NEV, KPM = KPM == "Sikeres") %>%
   ungroup() %>%
   group_by(IDOSZAK, GFB_KOTES_NEV, KPM) %>%
@@ -293,7 +296,7 @@ auw_tpml_ctype_success_total <-  autouw_tpml %>%
   select(IDOSZAK, GFB_KOTES_NEV, SIKER_PER_TOTAL)
 
 
-# Compute success rate for TPML per each contact type 
+# Compute success rate for TPML per each contact type
 auw_tpml_ctype_success_attemp <-  autouw_tpml %>%
   filter(KPM != "Nincs") %>%
   group_by(IDOSZAK, GFB_KOTES_NEV, KPM) %>%
@@ -309,13 +312,14 @@ auw_tpml_ctype <- auw_tpml_ctype_attempt %>%
             by = c("IDOSZAK", "GFB_KOTES_NEV")) %>%
   left_join(auw_tpml_ctype_success_attemp,
             by = c("IDOSZAK", "GFB_KOTES_NEV")) %>%
-  gather(MUTATO, PCT, -IDOSZAK, -GFB_KOTES_NEV)
+  gather(MUTATO, PCT,-IDOSZAK,-GFB_KOTES_NEV)
 
 
 # Save for dashboard output
 write.csv(auw_tpml_ctype,
           here::here("Data", "p2_auw_tpml_ctype.csv"),
           row.names = FALSE)
+
 
 
 #########################################################################################
@@ -325,7 +329,7 @@ write.csv(auw_tpml_ctype,
 # Transformations
 # Extract freqs from last 3 months to get valid understanding of present root-causes
 autouw_error_freq <-
-  autouw_error_freq[!is.na(autouw_error_freq$MODTYP),]
+  autouw_error_freq[!is.na(autouw_error_freq$MODTYP), ]
 
 autouw_error_freq <-  autouw_error_freq %>%
   mutate(MODTYP = case_when(.$MODTYP == "Vagyon" ~ "Lakás",
@@ -336,7 +340,9 @@ autouw_error_freq_last3 <-
   autouw_error_freq %>% filter(ymd_hms(IDOSZAK) >= floor_date(Sys.Date(), unit = "month") - months(3))
 
 autouw_error_freq_last3$IDOSZAK <-
-  paste0(substr(autouw_error_freq_last3$IDOSZAK, 1, 4), "/", substr((autouw_error_freq_last3$IDOSZAK), 6, 7))
+  paste0(substr(autouw_error_freq_last3$IDOSZAK, 1, 4),
+         "/",
+         substr((autouw_error_freq_last3$IDOSZAK), 6, 7))
 
 autouw_error_freq$IDOSZAK <-
   paste0(substr(autouw_error_freq$IDOSZAK, 1, 4), "/", substr((autouw_error_freq$IDOSZAK), 6, 7))
@@ -354,10 +360,9 @@ freq <- autouw_error_freq_last3 %>%
 
 
 # Save for dashboard output
-write.csv(freq, 
+write.csv(freq,
           here::here("Data", "p3_error_freq.csv"),
           row.names = FALSE)
-
 
 
 # Freq of errors per prod line
@@ -372,7 +377,7 @@ freq_prod <- autouw_error_freq_last3 %>%
 
 
 # Save for dashboard output
-write.csv(freq_prod, 
+write.csv(freq_prod,
           here::here("Data", "p3_error_freq_prod.csv"),
           row.names = FALSE)
 
@@ -380,8 +385,8 @@ write.csv(freq_prod,
 # Freq time series for most common errors (of last 3 months) per prod line
 # Most common errors extracted from last 3 months then track them backwards in time
 most_common <- unique(freq_prod$HIBAAZON)
-autouw_error_freq_mc <- autouw_error_freq %>% 
-                        filter(HIBAAZON %in% most_common)
+autouw_error_freq_mc <- autouw_error_freq %>%
+  filter(HIBAAZON %in% most_common)
 
 freq_prod_mc <- autouw_error_freq_mc %>%
   group_by(IDOSZAK, MODTYP, HIBAAZON, HIBA) %>%
@@ -393,7 +398,7 @@ freq_prod_mc <- autouw_error_freq_mc %>%
 
 
 # Save for dashboard output
-write.csv(freq_prod_mc, 
+write.csv(freq_prod_mc,
           here::here("Data", "p3_error_freq_prod_mc.csv"),
           row.names = FALSE)
 
@@ -406,7 +411,7 @@ write.csv(freq_prod_mc,
 # Transformations
 # Extract patterns from last 3 months to get valid understanding of present root-causes
 autouw_error_pattern <-
-  autouw_error_pattern[!is.na(autouw_error_pattern$MODTYP), ]
+  autouw_error_pattern[!is.na(autouw_error_pattern$MODTYP),]
 
 autouw_error_pattern <-  autouw_error_pattern %>%
   mutate(MODTYP = case_when(.$MODTYP == "Vagyon" ~ "Lakás",
@@ -436,7 +441,7 @@ freq_pattern <- autouw_error_pattern_last3 %>%
 
 
 # Save for dashboard output
-write.csv(freq_pattern, 
+write.csv(freq_pattern,
           here::here("Data", "p4_error_freq_pattern.csv"),
           row.names = FALSE)
 
@@ -453,15 +458,17 @@ freq_pattern_prod <- autouw_error_pattern_last3 %>%
 
 
 # Save for dashboard output
-write.csv(freq_pattern_prod, 
-          here::here("Data", "p4_error_freq_pattern_prod.csv"),
-          row.names = FALSE)
+write.csv(
+  freq_pattern_prod,
+  here::here("Data", "p4_error_freq_pattern_prod.csv"),
+  row.names = FALSE
+)
 
 
 # Freq time series for most common patterns per prod line
 most_common_pattern <- unique(freq_pattern_prod$HIBA_MINTA)
-autouw_error_pattern_mc <- autouw_error_pattern %>% 
-                        filter(HIBA_MINTA %in% most_common_pattern)
+autouw_error_pattern_mc <- autouw_error_pattern %>%
+  filter(HIBA_MINTA %in% most_common_pattern)
 
 error_prod_mc <- autouw_error_pattern_mc %>%
   group_by(IDOSZAK, MODTYP, HIBA_MINTA) %>%
@@ -473,9 +480,11 @@ error_prod_mc <- autouw_error_pattern_mc %>%
 
 
 # Save for dashboard output
-write.csv(error_prod_mc, 
-          here::here("Data", "p4_error_freq_pattern_prod_mc.csv"),
-          row.names = FALSE)
+write.csv(
+  error_prod_mc,
+  here::here("Data", "p4_error_freq_pattern_prod_mc.csv"),
+  row.names = FALSE
+)
 
 
 
@@ -485,7 +494,7 @@ write.csv(error_prod_mc,
 
 # Transformations
 autouw_cost <-
-  autouw_cost[!is.na(autouw_cost$MODTYP), ]
+  autouw_cost[!is.na(autouw_cost$MODTYP),]
 
 autouw_cost <-  autouw_cost %>%
   mutate(MODTYP = case_when(.$MODTYP == "Vagyon" ~ "Lakás",
@@ -499,9 +508,9 @@ cost_monthly <- autouw_cost %>%
   ungroup() %>%
   left_join(num_wdays, by = c("IDOSZAK")) %>%
   mutate(FTE = HIBA_IDO / 60 / 7 / MNAP,
-         IDOSZAK = paste0(substr(IDOSZAK, 1, 4), "/", substr((IDOSZAK), 6, 7))) %>% 
-  left_join(auw_main[auw_main$MUTATO == "SIKER_PER_TELJES", ], by=c("IDOSZAK")) %>% 
-  rename(SIKER_PER_TELJES = PCT) %>% 
+         IDOSZAK = paste0(substr(IDOSZAK, 1, 4), "/", substr((IDOSZAK), 6, 7))) %>%
+  left_join(auw_main[auw_main$MUTATO == "SIKER_PER_TELJES",], by = c("IDOSZAK")) %>%
+  rename(SIKER_PER_TELJES = PCT) %>%
   select(IDOSZAK, FTE, SIKER_PER_TELJES)
 
 
@@ -518,9 +527,9 @@ cost_prod_monthly <- autouw_cost %>%
   ungroup() %>%
   left_join(num_wdays, by = c("IDOSZAK")) %>%
   mutate(FTE = HIBA_IDO / 60 / 7 / MNAP,
-         IDOSZAK = paste0(substr(IDOSZAK, 1, 4), "/", substr((IDOSZAK), 6, 7))) %>% 
-  left_join(auw_prod[auw_prod$MUTATO == "SIKER_PER_TELJES", ], by=c("IDOSZAK", "MODTYP")) %>% 
-  rename(SIKER_PER_TELJES = PCT) %>% 
+         IDOSZAK = paste0(substr(IDOSZAK, 1, 4), "/", substr((IDOSZAK), 6, 7))) %>%
+  left_join(auw_prod[auw_prod$MUTATO == "SIKER_PER_TELJES",], by = c("IDOSZAK", "MODTYP")) %>%
+  rename(SIKER_PER_TELJES = PCT) %>%
   select(IDOSZAK, MODTYP, FTE, SIKER_PER_TELJES)
 
 
@@ -542,15 +551,16 @@ wdays_last3 <-
   select(MNAP) %>% sum
 
 fte_last3 <- autouw_cost %>%
-  filter(ymd_hms(IDOSZAK) >= floor_date(Sys.Date(), unit = "month") - months(3)) %>% 
+  filter(ymd_hms(IDOSZAK) >= floor_date(Sys.Date(), unit = "month") - months(3)) %>%
   group_by(MODTYP, HIBA_MINTA) %>%
   summarize(HIBA_IDO = sum(IDO_PERC)) %>%
   ungroup() %>%
-  mutate(FTE = HIBA_IDO / 60 / 7 / wdays_last3) 
+  mutate(FTE = HIBA_IDO / 60 / 7 / wdays_last3)
 
-cost_pattern_last3 <- freq_pattern_prod %>% left_join(fte_last3, by = c("MODTYP", "HIBA_MINTA")) %>% 
-  mutate(FAJL_FTE = FTE/TOTAL*1000) %>% 
-  select(MODTYP, HIBA_MINTA, GYAKORISAG, FTE, FAJL_FTE) %>% 
+cost_pattern_last3 <-
+  freq_pattern_prod %>% left_join(fte_last3, by = c("MODTYP", "HIBA_MINTA")) %>%
+  mutate(FAJL_FTE = FTE / TOTAL * 1000) %>%
+  select(MODTYP, HIBA_MINTA, GYAKORISAG, FTE, FAJL_FTE) %>%
   arrange(MODTYP, desc(FTE))
 
 
@@ -558,5 +568,3 @@ cost_pattern_last3 <- freq_pattern_prod %>% left_join(fte_last3, by = c("MODTYP"
 write.csv(cost_pattern_last3,
           here::here("Data", "p5_cost_pattern_last3.csv"),
           row.names = FALSE)
-
-

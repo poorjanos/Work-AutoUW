@@ -402,6 +402,7 @@ ggplot(cost_pattern_last3, aes(
   y = FTE
 )) +
   geom_bar(stat = "identity") +
+  theme(axis.text.y = element_text(size = 10)) +
   scale_x_discrete(
     labels = function(x)
       str_wrap(x, width = 180)
