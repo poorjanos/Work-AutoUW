@@ -1,4 +1,3 @@
-/* Formatted on 2018.02.26. 14:21:10 (QP5 v5.115.810.9015) */
 CREATE OR REPLACE PROCEDURE POORJ.kpm_ktg
 IS
 BEGIN
@@ -52,5 +51,6 @@ BEGIN
                  gfb_kotes_nev,
                  hiba_minta
       ORDER BY   idoszak;
+COMMIT;
 END kpm_ktg;
 /

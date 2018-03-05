@@ -1,4 +1,3 @@
-/* Formatted on 2018.02.26. 12:12:18 (QP5 v5.115.810.9015) */
 CREATE OR REPLACE PROCEDURE POORJ.kpm_minta_naplo
 IS
 BEGIN
@@ -266,5 +265,6 @@ BEGIN
                                                        t_autouw_dict d
                                                WHERE   c.hibaazon =
                                                           d.hibaazon))));
+COMMIT;
 END kpm_minta_naplo;
 /

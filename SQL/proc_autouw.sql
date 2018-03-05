@@ -388,5 +388,6 @@ BEGIN
                                               )
                                           AND  TRUNC (SYSDATE, 'mm') - 1
                AND fproposal.cntry_flg LIKE 'HU';
+COMMIT;
 END havi_kpm;
 /

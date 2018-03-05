@@ -28,6 +28,7 @@ BEGIN
                kpm_hiba_dat,
                gfb_kotes_nev
         FROM   t_erk_kpm;
+COMMIT;
 
    EXECUTE IMMEDIATE 'TRUNCATE TABLE  t_autouw_dict';
 
@@ -115,5 +116,6 @@ BEGIN
                                      AND a.kpm = 'Sikertelen')
                 GROUP BY   hibaazon, hiba
                 ORDER BY   hibaazon, hiba);
+COMMIT;
 END kpm_naplo;
 /
