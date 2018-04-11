@@ -48,7 +48,7 @@ ggplot(cost_monthly, aes(x = IDOSZAK, group = 1)) +
   geom_line(aes(y = FTE/30, colour = "FTE igény")) +
   geom_point(aes(y = SIKER_PER_TELJES, colour = 'Sikerarány')) +
   geom_point(aes(y = FTE/30, colour = "FTE igény")) +
-  scale_y_continuous(labels = percent, sec.axis = sec_axis(~.*30, name = "Sikertelen ág manuáli FTE igénye [db]")) +
+  scale_y_continuous(labels = percent, sec.axis = sec_axis(~.*30, name = "Sikertelen ág manuális FTE igénye [db]")) +
   theme(axis.text.x = element_text(angle = 90)) +
   labs(y = "Sikerarány a teljes feldlgozott állományban [%]",
        x = "Idõszak",
@@ -366,7 +366,7 @@ Költségek {.storyboard data-navmenu="Tartalom"}
 
 ### Ezen az ábrán az automatikus kötvényesítés hibaágának manuális utókezelésének költségeit mutatjuk meg **termékcsoportonként** idõben
 
-```{r, fig.width=12, fig.height=6}
+```{r, fig.width=12}
 cost_prod_monthly <- read.csv(here::here("Data", "p5_cost_prod_monthly.csv"))
 
 ggplot(cost_prod_monthly, aes(x = IDOSZAK, group = 1)) +
