@@ -115,7 +115,8 @@ BEGIN
                                 '7S',
                                 '7E',
                                 '7A',
-                                'M3')
+                                'M3',
+				'F4')
                          AND b.f_vonalkod = a.vonalkod);
 
    COMMIT;
