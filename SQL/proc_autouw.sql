@@ -116,7 +116,7 @@ BEGIN
                                 '7E',
                                 '7A',
                                 'M3',
-				'F4')
+                                'F4')
                          AND b.f_vonalkod = a.vonalkod);
 
    COMMIT;
@@ -261,7 +261,8 @@ BEGIN
                   (SELECT   f_vonalkod
                      FROM   ab_t_akr_esemeny
                     WHERE   f_datum >= ADD_MONTHS (TRUNC (SYSDATE, 'mm'), -1)
-                            AND f_esemeny IN ('D3', '76', 'M2'));
+                            AND f_esemeny IN ('D3', '76', 'M2'))
+            AND a.kpm <> 'Sikeres';
 
    COMMIT;
 
@@ -336,20 +337,20 @@ BEGIN
 
 
    INSERT INTO t_erk_kpm (idoszak,
-                                vonalkod,
-                                szerzazon,
-                                modkod,
-                                modtyp,
-                                erkdat,
-                                szerzdat,
-                                elutdat,
-                                stornodat,
-                                papir_tipus,
-                                erk_esemeny,
-                                kpm,
-                                kpm_hiba_dat,
-                                gfb_kotes,
-                                gfb_kotes_nev)
+                          vonalkod,
+                          szerzazon,
+                          modkod,
+                          modtyp,
+                          erkdat,
+                          szerzdat,
+                          elutdat,
+                          stornodat,
+                          papir_tipus,
+                          erk_esemeny,
+                          kpm,
+                          kpm_hiba_dat,
+                          gfb_kotes,
+                          gfb_kotes_nev)
       SELECT   ADD_MONTHS (TRUNC (SYSDATE, 'mm'), -1),
                TO_CHAR (fproposal.proposal_idntfr),
                TO_CHAR (fpack.oid_to_idntfr (fproposal.contract_oid)),
@@ -389,6 +390,7 @@ BEGIN
                                               )
                                           AND  TRUNC (SYSDATE, 'mm') - 1
                AND fproposal.cntry_flg LIKE 'HU';
-COMMIT;
+
+   COMMIT;
 END havi_kpm;
 /
