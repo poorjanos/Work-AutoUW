@@ -89,3 +89,9 @@ ggplot(freq_pattern, aes(
     x = "Hibamintázat"
   ) +
   ggtitle("KPM hiba után egy érintéssel menesztett lakás ajánlatok \n leggyakoribb hibamintázatai (2018)")
+
+ggsave(here::here("Reports", "egy_erint_lak.png"),
+  width = 14,
+  height = 7,
+  dpi = 500
+)
