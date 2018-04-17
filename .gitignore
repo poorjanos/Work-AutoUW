@@ -3,6 +3,7 @@
 *.html
 *.xlsx
 *.xls
+*.png
 scriptLog
 
 # History files
