@@ -329,9 +329,9 @@ BEGIN
    COMMIT;
 
 
-   EXECUTE IMMEDIATE 'CREATE OR REPLACE SYNONYM fpack FOR pack@dijtart_exdbp_f400';
+   EXECUTE IMMEDIATE 'CREATE OR REPLACE SYNONYM fpack FOR pack@dl_exdb_pre2';
 
-   EXECUTE IMMEDIATE 'CREATE OR REPLACE SYNONYM fproposal FOR proposal@dijtart_exdbp_f400';
+   EXECUTE IMMEDIATE 'CREATE OR REPLACE SYNONYM fproposal FOR proposal@dl_exdb_pre2';
 
    COMMIT;
 
