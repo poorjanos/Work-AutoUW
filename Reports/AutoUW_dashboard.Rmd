@@ -15,6 +15,10 @@ library(ggplot2)
 library(lubridate)
 library(scales)
 library(stringr)
+library(ggiraph)
+
+# Import helper functions
+source(here::here("R", "data_manipulation.R"), local = TRUE)
 ```
 
 
@@ -41,17 +45,21 @@ Column {data-width=700}
 ```{r, fig.width = 8}
 cost_monthly <- read.csv(here::here("Data", "p1_cost_monthly.csv"))
 
-ggplot(cost_monthly, aes(x = IDOSZAK, group = 1)) +
-  geom_line(aes(y = SIKER_PER_TELJES, colour = 'Sikerarány')) +
-  geom_line(aes(y = FTE/30, colour = "FTE igény")) +
-  geom_point(aes(y = SIKER_PER_TELJES, colour = 'Sikerarány')) +
-  geom_point(aes(y = FTE/30, colour = "FTE igény")) +
-  scale_y_continuous(labels = percent, sec.axis = sec_axis(~.*30, name = "Sikertelen ág manuális FTE igénye [db]")) +
+p <- ggplot(cost_monthly, aes(x = IDOSZAK, group = 1)) +
+  geom_line(aes(y = SIKER_PER_TELJES, colour = "Sikerarány")) +
+  geom_line(aes(y = FTE / 30, colour = "FTE igény")) +
+  geom_point_interactive(aes(y = SIKER_PER_TELJES, colour = "Sikerarány", tooltip = paste0(round(SIKER_PER_TELJES*100, 2), "%"))) +
+  geom_point_interactive(aes(y = FTE / 30, colour = "FTE igény", tooltip = paste(round(FTE, 2), "FTE"))) +
+  scale_y_continuous(labels = percent, sec.axis = sec_axis(~ . * 30, name = "Sikertelen ág manuális FTE igénye [db]")) +
   theme(axis.text.x = element_text(angle = 90)) +
-  labs(y = "Sikerarány a teljes feldlgozott állományban [%]",
-       x = "Idõszak",
-       colour = "Mutató") +
+  labs(
+    y = "Sikerarány a teljes feldlgozott állományban [%]",
+    x = "Idõszak",
+    colour = "Mutató"
+  ) +
   theme(legend.position = c(0.8, 0.9))
+
+ggiraph(code = print(p), width_svg = 8)
 ```
 
 
@@ -64,14 +72,7 @@ Sikerarány {.storyboard data-navmenu="Tartalom"}
 ```{r, fig.width=10}
 auw_main <- read.csv(here::here("Data", "p2_auw_main.csv"))
 
-ggplot(auw_main, aes(IDOSZAK, PCT, group = MUTATO, colour = MUTATO)) +
-  geom_line() +
-  geom_point() +
-  scale_y_continuous(labels = percent) +
-  theme(axis.text.x = element_text(angle = 90)) +
-  labs(y = "Százlékos arány [%]",
-       x = "Idõszak",
-       colour = "Mutató")
+plot_success(auw_main, use_facet = FALSE, fig_size = 10)
 ```
 
 ***
@@ -86,16 +87,13 @@ Az automatiks kötvényesítés teljesítményét három mutató alapján értékelhetjük:
 ```{r, fig.width=12, fig.height=6}
 auw_prod <- read.csv(here::here("Data", "p2_auw_prod.csv"))
 
-ggplot(auw_prod, aes(IDOSZAK, PCT, group = MUTATO, colour = MUTATO)) +
-  geom_line() +
-  geom_point() +
-  scale_y_continuous(labels = percent) +
-  theme(axis.text.x = element_text(angle = 90, size = 8)) +
-  facet_grid(. ~ MODTYP) +
-  labs(y = "Százlékos arány [%]",
-       x = "Idõszak",
-       colour = "Mutató") +
-  theme(legend.position = c(0.9, 0.8))
+plot_success(
+  auw_prod,
+  use_facet = TRUE,
+  facet_two = "MODTYP",
+  fig_size = 10,
+  x_label_size = 6
+)
 ```
 
 ***
@@ -108,19 +106,17 @@ Az automatiks kötvényesítés teljesítményét három mutató alapján értékelhetjük:
 ### Ezen az ábrán automatikus kötvényesítés sikerességét **termékcsoportonként** és **kötési módonként** értékeljük ki több mutató mentén
 
 ```{r, fig.width=12, fig.height=6}
-auw_prod_media <- read.csv(here::here("Data", "p2_auw_prod_media.csv"))
-
-ggplot(auw_prod_media, aes(IDOSZAK, PCT, group = MUTATO, colour = MUTATO)) +
-  geom_line() +
-  geom_point() +
-  scale_y_continuous(labels = percent) +
-  theme(axis.text.x = element_text(angle = 90, size = 5),
-        legend.position = "bottom") +
-  facet_grid(MODTYP ~ PAPIR_TIPUS) +
-  labs(y = "Százlékos arány [%]",
-       x = "Idõszak",
-       colour = "Mutató") +
-  geom_jitter()
+auw_prod_media <-
+  read.csv(here::here("Data", "p2_auw_prod_media.csv"))
+  
+plot_success(
+  auw_prod_media,
+  use_facet = TRUE,
+  facet_one = "MODTYP",
+  facet_two = "PAPIR_TIPUS",
+  fig_size = 10,
+  x_label_size = 4
+)
 ```
 
 ***
@@ -133,19 +129,16 @@ Az automatiks kötvényesítés teljesítményét három mutató alapján értékelhetjük:
 ### Ezen az ábrán automatikus kötvényesítés sikerességét a **KGFB** termékcsoporton és annak **kötési okaiként** értékeljük ki több mutató mentén
 
 ```{r, fig.width=12, fig.height=6}
-auw_tpml_ctype <- read.csv(here::here("Data", "p2_auw_tpml_ctype.csv"))
-
-ggplot(auw_tpml_ctype, aes(IDOSZAK, PCT, group = MUTATO, colour = MUTATO)) +
-  geom_line() +
-  geom_point() +
-  scale_y_continuous(labels = percent) +
-  theme(axis.text.x = element_text(angle = 90, size = 6),
-        legend.position = "bottom") +
-  facet_grid(. ~ GFB_KOTES_NEV) +
-  labs(y = "Százlékos arány [%]",
-       x = "Idõsuak",
-       colour = "Mérõszám") +
-  geom_jitter()
+auw_tpml_ctype <-
+  read.csv(here::here("Data", "p2_auw_tpml_ctype.csv"))
+  
+plot_success(
+  auw_tpml_ctype,
+  use_facet = TRUE,
+  facet_two = "GFB_KOTES_NEV",
+  fig_size = 10,
+  x_label_size = 3
+)
 ```
 
 ***
@@ -165,13 +158,13 @@ Hibaokok {.storyboard data-navmenu="Tartalom"}
 ```{r, fig.width=14, fig.height=6}
 error_freq <- read.csv(here::here("Data", "p3_error_freq.csv"))
 
-ggplot(error_freq, aes(x = factor(error_freq$HIBA, levels = error_freq$HIBA[order(error_freq$GYAKORISAG)]), y = GYAKORISAG)) +
-  geom_bar(stat = "identity") +
-  theme(axis.text.y = element_text(size = 10)) +
-  scale_y_continuous(label = percent) +
-  coord_flip() +
-  labs(y = "Relatív gyakoriság",
-       x = "Hiba")
+plot_error_freq(
+  error_freq,
+  use_facet = FALSE,
+  fig_size = 10,
+  x_label_size = 8,
+  y_label_size = 12
+)
 ```
 
 ***
@@ -184,17 +177,14 @@ ggplot(error_freq, aes(x = factor(error_freq$HIBA, levels = error_freq$HIBA[orde
 ```{r, fig.width=14, fig.height=6}
 error_freq_prod <- read.csv(here::here("Data", "p3_error_freq_prod.csv"))
 
-ggplot(error_freq_prod, aes(
-  x = factor(error_freq_prod$HIBA, levels = error_freq_prod$HIBA[order(error_freq_prod$GYAKORISAG)]),
-  y = GYAKORISAG
-)) +
-  geom_bar(stat = "identity") +
-  theme(axis.text.y = element_text(size = 10)) +
-  scale_y_continuous(label = percent) +
-  coord_flip() +
-  labs(y = "Relatív gyakoriság",
-       x = "Hiba") +
-  facet_grid(. ~ MODTYP)
+plot_error_freq(
+  error_freq_prod,
+  use_facet = TRUE,
+  facet_two = "MODTYP",
+  fig_size = 10,
+  x_label_size = 8,
+  y_label_size = 10
+)
 ```
 
 ***
@@ -207,18 +197,13 @@ ggplot(error_freq_prod, aes(
 ```{r, fig.width=14, fig.height=8}
 error_freq_prod_mc <- read.csv(here::here("Data", "p3_error_freq_prod_mc.csv"))
 
-ggplot(error_freq_prod_mc[error_freq_prod_mc$MODTYP == "GFB",],
-       aes(
-         x = IDOSZAK,
-         y = GYAKORISAG,
-         group = 1
-       )) +
-  geom_line(size = 1) +
-  geom_point(size = 1, shape = 15) +
-  scale_y_continuous(label = percent) +
-  theme(axis.text.x = element_text(angle = 90, size = 5),
-        strip.text.x = element_text(size = 12)) +
-  facet_wrap(~HIBA, ncol = 8, labeller = label_wrap_gen(width=20))
+plot_error_freq_ts(
+  error_freq_prod_mc,
+  subset_by = "GFB",
+  facet_by = "HIBA",
+  fig_width = 14,
+  fig_height = 8
+)
 ```
 
 ***
@@ -231,18 +216,13 @@ ggplot(error_freq_prod_mc[error_freq_prod_mc$MODTYP == "GFB",],
 ```{r, fig.width=14, fig.height=8}
 error_freq_prod_mc <- read.csv(here::here("Data", "p3_error_freq_prod_mc.csv"))
 
-ggplot(error_freq_prod_mc[error_freq_prod_mc$MODTYP == "Lakás",],
-       aes(
-         x = IDOSZAK,
-         y = GYAKORISAG,
-         group = 1
-       )) +
-  geom_line(size = 1) +
-  geom_point(size = 1, shape = 15) +
-  scale_y_continuous(label = percent) +
-  theme(axis.text.x = element_text(angle = 90, size = 5),
-        strip.text.x = element_text(size = 12)) +
-  facet_wrap(~HIBA, ncol = 8, labeller = label_wrap_gen(width=20))
+plot_error_freq_ts(
+  error_freq_prod_mc,
+  subset_by = "Lakás",
+  facet_by = "HIBA",
+  fig_width = 14,
+  fig_height = 8
+)
 ```
 
 ***
@@ -260,16 +240,14 @@ Hibamintázatok {.storyboard data-navmenu="Tartalom"}
 ```{r, fig.width=14, fig.height=6}
 error_freq_pattern <- read.csv(here::here("Data", "p4_error_freq_pattern.csv"))
 
-ggplot(error_freq_pattern, aes(
-  x = factor(error_freq_pattern$HIBA_MINTA, levels = error_freq_pattern$HIBA_MINTA[order(error_freq_pattern$GYAKORISAG)]),
-  y = GYAKORISAG
-  )) +
-  geom_bar(stat = "identity") +
-  theme(axis.text.y = element_text(size = 10)) +
-  scale_y_continuous(label = percent) +
-  coord_flip() +
-  labs(y = "Relatív gyakoriság",
-  x = "Hibamintázat")
+plot_error_pattern_freq(
+  error_freq_pattern,
+  use_facet = FALSE,
+  fig_width = 14,
+  fig_height = 6,
+  x_label_size = 8,
+  y_label_size = 10
+)
 ```
 
 ***
@@ -286,18 +264,15 @@ ggplot(error_freq_pattern, aes(
 ```{r, fig.width=14, fig.height=6}
 error_freq_pattern_prod <- read.csv(here::here("Data", "p4_error_freq_pattern_prod.csv"))
 
-ggplot(error_freq_pattern_prod, aes(
-  x = factor(error_freq_pattern_prod$HIBA_MINTA, levels = error_freq_pattern_prod$HIBA_MINTA[order(error_freq_pattern_prod$GYAKORISAG)]),
-  y = GYAKORISAG
-)) +
-  geom_bar(stat = "identity") +
-  scale_y_continuous(label = percent) +
-  scale_x_discrete(labels = function(x) str_wrap(x, width = 200)) +
-  theme(axis.text.y = element_text(size = 10)) +
-  coord_flip() +
-  labs(y = "Relatív gyakoriság",
-       x = "Hibamintázat") +
-  facet_grid(. ~ MODTYP)
+plot_error_pattern_freq(
+  error_freq_pattern_prod,
+  use_facet = TRUE,
+  facet_two = "MODTYP",
+  fig_width = 14,
+  fig_height = 6,
+  x_label_size = 8,
+  y_label_size = 10
+)
 ```
 
 ***
@@ -313,20 +288,13 @@ ggplot(error_freq_pattern_prod, aes(
 ```{r, fig.width=14, fig.height=8}
 error_freq_pattern_prod_mc <- read.csv(here::here("Data", "p4_error_freq_pattern_prod_mc.csv"))
 
-ggplot(error_freq_pattern_prod_mc[error_freq_pattern_prod_mc$MODTYP == "GFB",],
-       aes(
-         x = IDOSZAK,
-         y = GYAKORISAG,
-         group = 1
-       )) +
-  geom_line(size = 1) +
-  geom_point(size = 1, shape = 15) +
-  scale_y_continuous(label = percent) +
-  theme(axis.text.x = element_text(angle = 90, size = 5),
-        strip.text.x = element_text(size = 12)) +
-  labs(y = "Relatív gyakoriság",
-       x = "Hibamintázat") +
-  facet_wrap(~HIBA_MINTA, ncol = 8, labeller = label_wrap_gen(width=25))
+plot_error_freq_ts(
+  error_freq_pattern_prod_mc,
+  subset_by = "GFB",
+  facet_by = "HIBA_MINTA",
+  fig_width = 14,
+  fig_height = 8
+)
 ```
 
 ***
@@ -338,20 +306,13 @@ ggplot(error_freq_pattern_prod_mc[error_freq_pattern_prod_mc$MODTYP == "GFB",],
 ```{r, fig.width=14, fig.height=8}
 error_freq_pattern_prod_mc <- read.csv(here::here("Data", "p4_error_freq_pattern_prod_mc.csv"))
 
-ggplot(error_freq_pattern_prod_mc[error_freq_pattern_prod_mc$MODTYP == "Lakás",],
-       aes(
-         x = IDOSZAK,
-         y = GYAKORISAG,
-         group = 1
-       )) +
-  geom_line(size = 1) +
-  geom_point(size = 1, shape = 15) +
-  scale_y_continuous(label = percent) +
-  theme(axis.text.x = element_text(angle = 90, size = 5),
-        strip.text.x = element_text(size = 12)) +
-  labs(y = "Relatív gyakoriság",
-       x = "Hiba mintázat") +
-  facet_wrap(~HIBA_MINTA, ncol = 8, labeller = label_wrap_gen(width=25))
+plot_error_freq_ts(
+  error_freq_pattern_prod_mc,
+  subset_by = "Lakás",
+  facet_by = "HIBA_MINTA",
+  fig_width = 14,
+  fig_height = 8
+)
 ```
 
 ***
@@ -367,11 +328,11 @@ Költségek {.storyboard data-navmenu="Tartalom"}
 ```{r, fig.width=12}
 cost_prod_monthly <- read.csv(here::here("Data", "p5_cost_prod_monthly.csv"))
 
-ggplot(cost_prod_monthly, aes(x = IDOSZAK, group = 1)) +
+p <- ggplot(cost_prod_monthly, aes(x = IDOSZAK, group = 1)) +
   geom_line(aes(y = SIKER_PER_TELJES, colour = 'Sikerarány')) +
   geom_line(aes(y = FTE/20, colour = "FTE igény")) +
-  geom_point(aes(y = SIKER_PER_TELJES, colour = 'Sikerarány')) +
-  geom_point(aes(y = FTE/20, colour = "FTE igény")) +
+  geom_point_interactive(aes(y = SIKER_PER_TELJES, colour = 'Sikerarány', tooltip = paste0(round(SIKER_PER_TELJES*100, 2), "%"))) +
+  geom_point_interactive(aes(y = FTE/20, colour = "FTE igény", tooltip = paste(round(FTE, 2), "FTE"))) +
   scale_y_continuous(labels = percent, sec.axis = sec_axis(~.*20, name = "FTE [db]")) +
   theme(axis.text.x = element_text(angle = 90)) +
   labs(y = "Sikerarány [%]",
@@ -380,13 +341,15 @@ ggplot(cost_prod_monthly, aes(x = IDOSZAK, group = 1)) +
   theme(legend.position = c(0.95, 0.95)) +
   coord_cartesian(ylim = c(0.0, 0.7)) +
   facet_grid(.~MODTYP)
+
+ggiraph(code = print(p), width_svg = 12)
 ```
 
 ***
 * Az automatikus kötvényesítés hibára futása esetén az ajánlatot manuálisan kell feldolgozni
 * A workflow rendszer (Kontakt) minden manuális tevékenységet tárol, így ponosan kiszámolható a hibaág kezelésének FTE igénye
 * Az FTE igény nem egyenlõ a létszámigénnyel, mivel az FTE a tiszta munkaidõigényt mutatja és nem számol a betegségek és szabadságok hatásával
-* A létszámigény meghatározásához az FTE igény +25%-os korrekciója az iparági sztenderd
+* A létszámigény meghatározásához az FTE igény 1.3-al kell szorozni (iparági sztenderd)
 * A sikerarány és a manuális munka FTE költség negatív korrelációja jól látható az ábrán: ha a sikerarány csökken, az FTE igény nõ
 
 
@@ -395,12 +358,13 @@ ggplot(cost_prod_monthly, aes(x = IDOSZAK, group = 1)) +
 ```{r, fig.width=14, fig.height=6}
 cost_pattern_last3 <- read.csv(here::here("Data", "p5_cost_pattern_last3.csv"))
 
-ggplot(cost_pattern_last3, aes(
+p <- ggplot(cost_pattern_last3, aes(
   x = factor(cost_pattern_last3$HIBA_MINTA, levels = cost_pattern_last3$HIBA_MINTA[order(cost_pattern_last3$FTE)]),
   y = FTE
 )) +
-  geom_bar(stat = "identity") +
-  theme(axis.text.y = element_text(size = 10)) +
+  geom_bar_interactive(stat = "identity", aes(tooltip = paste(round(FTE, 2), "FTE"))) +
+  #geom_bar(stat = "identity") +
+    theme(axis.text.y = element_text(size = 10)) +
   scale_x_discrete(
     labels = function(x)
       str_wrap(x, width = 180)
@@ -409,6 +373,8 @@ ggplot(cost_pattern_last3, aes(
   labs(y = "Havi FTE igény",
        x = "Hiba mintázat") +
   facet_grid(. ~ MODTYP)
+  
+ggiraph(code = print(p), width_svg = 14, height_svg = 6)
 ```
 
 ***
