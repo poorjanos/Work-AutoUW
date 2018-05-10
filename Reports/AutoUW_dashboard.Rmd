@@ -13,10 +13,8 @@ library(dplyr)
 library(tidyr)
 library(ggplot2)
 library(lubridate)
-library(plotly)
 library(scales)
 library(stringr)
-library(ggthemes)
 ```
 
 
