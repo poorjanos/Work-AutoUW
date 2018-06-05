@@ -262,7 +262,7 @@ BEGIN
                      FROM   ab_t_akr_esemeny
                     WHERE   f_datum >= ADD_MONTHS (TRUNC (SYSDATE, 'mm'), -1)
                             AND f_esemeny IN ('D3', '76', 'M2'))
-            AND a.kpm <> 'Sikeres';
+            AND a.kpm IS NULL;
 
    COMMIT;
 
