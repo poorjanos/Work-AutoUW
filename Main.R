@@ -14,7 +14,7 @@ dir.create(here::here("SQL"), showWarnings = FALSE)
 
 # Create constants
 # Set threshold for error relative frequency
-freq_lim = 0.02
+freq_lim = 0.03
 
 #########################################################################################
 # Data Extraction #######################################################################

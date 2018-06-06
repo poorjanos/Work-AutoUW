@@ -41,7 +41,7 @@ plot_error_freq <- function(df, use_facet = TRUE, facet_one = ".", facet_two = "
   # Plots error frequencies with optional faceting
   if (use_facet) {
     p <- ggplot(df, aes(
-      x = factor(df$HIBA, levels = df$HIBA[order(df$GYAKORISAG)]),
+      x = factor(df$HIBA, levels = unique(df$HIBA[order(df$GYAKORISAG)])),
       y = GYAKORISAG
     )) +
       geom_bar_interactive(stat = "identity", aes(tooltip = paste0(round(GYAKORISAG * 100, 2), "%"))) +
@@ -81,7 +81,7 @@ plot_error_pattern_freq <- function(df, use_facet = TRUE, facet_one = ".", facet
   # Plots error pattern frequencies with optional faceting
   if (use_facet) {
     p <- ggplot(df, aes(
-      x = factor(df$HIBA_MINTA, levels = df$HIBA_MINTA[order(df$GYAKORISAG)]),
+      x = factor(df$HIBA_MINTA, levels = unique(df$HIBA_MINTA[order(df$GYAKORISAG)])),
       y = GYAKORISAG
     )) +
       geom_bar_interactive(stat = "identity", aes(tooltip = paste0(round(GYAKORISAG * 100, 2), "%"))) +

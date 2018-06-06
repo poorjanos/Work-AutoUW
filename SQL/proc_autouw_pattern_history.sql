@@ -7,14 +7,16 @@ BEGIN
                                             modtyp,
                                             papir_tipus,
                                             gfb_kotes_nev,
-                                            hiba_minta)
+                                            hiba_minta,
+                                            modkod)
       SELECT   vonalkod,
                szerzazon,
                idoszak,
                modtyp,
                papir_tipus,
                gfb_kotes_nev,
-               SUBSTR (trace, 0, INSTR (trace, '***0') - 1) AS hiba_minta
+               SUBSTR (trace, 0, INSTR (trace, '***0') - 1) AS hiba_minta,
+               modkod
         FROM   (SELECT   vonalkod,
                          szerzazon,
                          idoszak,
@@ -44,7 +46,8 @@ BEGIN
                          || e11
                          || '***'
                          || e12
-                            AS trace
+                            AS trace,
+                            modkod
                   FROM   (SELECT   DISTINCT
                                    vonalkod,
                                    szerzazon,
@@ -121,7 +124,8 @@ BEGIN
                                       OVER (PARTITION BY szerzazon
                                             ORDER BY hibaazon
                                             ROWS UNBOUNDED PRECEDING)
-                                      e14
+                                      e14,
+                                      modkod
                             FROM   (SELECT   vonalkod,
                                              szerzazon,
                                              idoszak,
@@ -233,7 +237,8 @@ BEGIN
                                                 OVER (PARTITION BY szerzazon
                                                       ORDER BY hibaazon)
                                                 AS e14,
-                                             hibaazon
+                                             hibaazon,
+                                             modkod
                                       FROM   (SELECT   c.*, d.hiba
                                                 FROM   (  SELECT   DISTINCT
                                                                    vonalkod,
@@ -247,7 +252,8 @@ BEGIN
                                                                    )
                                                                       AS idoszak,
                                                                    f_hibaszam
-                                                                      AS hibaazon
+                                                                      AS hibaazon,
+                                                                      modkod
                                                             FROM   t_erk_kpm a,
                                                                    ab_t_akr_naplo b
                                                            WHERE   a.szerzazon =

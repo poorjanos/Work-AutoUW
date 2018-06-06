@@ -359,7 +359,7 @@ ggiraph(code = print(p), width_svg = 12)
 cost_pattern_last3 <- read.csv(here::here("Data", "p5_cost_pattern_last3.csv"))
 
 p <- ggplot(cost_pattern_last3, aes(
-  x = factor(cost_pattern_last3$HIBA_MINTA, levels = cost_pattern_last3$HIBA_MINTA[order(cost_pattern_last3$FTE)]),
+  x = factor(cost_pattern_last3$HIBA_MINTA, levels = unique(cost_pattern_last3$HIBA_MINTA[order(cost_pattern_last3$FTE)])),
   y = FTE
 )) +
   geom_bar_interactive(stat = "identity", aes(tooltip = paste(round(FTE, 2), "FTE"))) +
