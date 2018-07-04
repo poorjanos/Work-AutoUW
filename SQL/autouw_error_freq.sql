@@ -1,4 +1,5 @@
   SELECT   DISTINCT a.szerzazon,
+                    modkod,
                     modtyp,
                     papir_tipus,
                     gfb_kotes_nev,

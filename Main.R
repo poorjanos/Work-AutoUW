@@ -568,3 +568,94 @@ cost_pattern_last3 <-
 write.csv(cost_pattern_last3,
           here::here("Data", "p5_cost_pattern_last3.csv"),
           row.names = FALSE)
+
+
+
+#########################################################################################
+# LSZB-OKE ##############################################################################
+#########################################################################################
+
+# Compute autoUW main KPIs for Home per Product -----------------------------------------
+# Compute attempt rate
+home_prod_attempt <-  autouw_main %>%
+  filter(MODTYP == "Lakás" & MODKOD %in% c("21968", "21972")) %>% 
+  mutate(ATTEMPT = case_when(.$KPM %in% c("Sikeres", "Sikertelen") ~ 'I',
+                             TRUE ~ 'N')) %>%
+  group_by(IDOSZAK, MODKOD, ATTEMPT) %>%
+  summarise (TOTAL = n()) %>%
+  mutate(KISERELT = TOTAL / sum(TOTAL)) %>%
+  filter(ATTEMPT == "I") %>%
+  select(IDOSZAK, MODKOD, KISERELT)
+
+
+# Compute success rate within total
+home_prod_success_total <-  autouw_main %>%
+  filter(MODTYP == "Lakás" & MODKOD %in% c("21968", "21972")) %>% 
+  group_by(IDOSZAK, MODKOD, KPM) %>%
+  summarise (TOTAL = n()) %>%
+  mutate(SIKER_PER_TELJES = TOTAL / sum(TOTAL)) %>%
+  filter(KPM == "Sikeres") %>%
+  select(IDOSZAK, MODKOD, SIKER_PER_TELJES)
+
+
+# Compute success rate within attempted
+home_prod_success_attempt <-  autouw_main %>%
+  filter(MODTYP == "Lakás" & MODKOD %in% c("21968", "21972")) %>% 
+  filter(KPM != "Nincs") %>%
+  group_by(IDOSZAK, MODKOD, KPM) %>%
+  summarise (TOTAL = n()) %>%
+  mutate(SIKER_PER_KISERELT = TOTAL / sum(TOTAL)) %>%
+  filter(KPM == "Sikeres") %>%
+  select(IDOSZAK, MODKOD, SIKER_PER_KISERELT)
+
+
+# Merge KPI results
+home_prod_main <- home_prod_attempt %>%
+  left_join(home_prod_success_attempt, by = c("IDOSZAK", "MODKOD")) %>%
+  left_join(home_prod_success_total, c("IDOSZAK", "MODKOD")) %>%
+  gather(MUTATO, PCT,-MODKOD, -IDOSZAK) %>% 
+  ungroup()
+
+
+# Save for dashboard output
+write.csv(home_prod_main,
+          here::here("Data", "home_prod_main.csv"),
+          row.names = FALSE)
+
+
+# Freq of errors per Home product --------------------------------------------------------
+home_prod_error_freq <- autouw_error_freq_last3 %>%
+  filter(MODTYP == "Lakás" & MODKOD %in% c("21968", "21972")) %>% 
+  group_by(MODKOD, HIBAAZON, HIBA) %>%
+  summarize(TOTAL = n()) %>%
+  arrange(MODKOD, desc(TOTAL)) %>%
+  ungroup() %>%
+  group_by(MODKOD) %>%
+  mutate(GYAKORISAG = TOTAL / sum(TOTAL)) %>%
+  filter(GYAKORISAG >= freq_lim)
+
+
+# Save for dashboard output
+write.csv(home_prod_error_freq,
+          here::here("Data", "home_prod_error_freq.csv"),
+          row.names = FALSE)
+
+
+# Freq of patterns per Home prods---------------------------------------------------------
+home_freq_pattern_prod <- autouw_error_pattern_last3 %>%
+  filter(MODTYP == "Lakás" & MODKOD %in% c("21968", "21972")) %>% 
+  group_by(MODKOD, HIBA_MINTA) %>%
+  summarize(TOTAL = n()) %>%
+  arrange(MODKOD, desc(TOTAL)) %>%
+  ungroup() %>%
+  group_by(MODKOD) %>%
+  mutate(GYAKORISAG = TOTAL / sum(TOTAL)) %>%
+  filter(GYAKORISAG >= freq_lim)
+
+
+# Save for dashboard output
+write.csv(
+  home_freq_pattern_prod,
+  here::here("Data", "home_prod_freq_pattern.csv"),
+  row.names = FALSE
+)

@@ -149,6 +149,28 @@ Az automatiks kötvényesítés teljesítményét három mutató alapján értékelhetjük:
 - **SIKER_PER_TELJES**: sikerarány a teljes állományon, tehát azt a halmazt is számításba véve, ahol nem fut központi menesztés
 
 
+### Ezen az ábrán automatikus kötvényesítés sikerességét hasonlítjuk össze az **LSZB** és **OKÉ** lakástermékeken
+
+```{r, fig.width=12, fig.height=6}
+home_prod_main <-
+  read.csv(here::here("Data", "home_prod_main.csv"))
+  
+plot_success(
+  home_prod_main,
+  use_facet = TRUE,
+  facet_two = "MODKOD",
+  fig_size = 10,
+  x_label_size = 3
+)
+```
+
+***
+Az automatiks kötvényesítés teljesítményét három mutató alapján értékelhetjük:
+
+- **KISERELT**: a kísérlet, próbálkozás aránya, azaz az állomány mekkora hányadán futtott az adott idõszakban automatikus menesztés
+- **SIKER_PER_KISERELT**: sikerarány azon állományon, melyet az automatika megkísérelt elmeneszteni (magyarul, ahol futott központi menesztés)
+- **SIKER_PER_TELJES**: sikerarány a teljes állományon, tehát azt a halmazt is számításba véve, ahol nem fut központi menesztés
+
 
 Hibaokok {.storyboard data-navmenu="Tartalom"}
 =========================================
@@ -192,6 +214,28 @@ plot_error_freq(
 * A teljes állományon számolt arányokon túl termékcsoportonként jelentõsen eltérõ okokat figyelhetünk meg, ezért fontos a hibaokokat termékenként értelmezni
 * Megfigyelhetõ, hogy a termékcsoportokra más-más hibaokok jellemzõek, jóllehet néhány esetében közös elõforduás is tapasztalható
 
+
+### Ezen az ábrán az elmúlt 3 hónapban legtöbbször elõfordult hibaokok relatív gyakoriságát mutatjuk meg az **LSZB** és **OKÉ** lakástermékeken
+
+```{r, fig.width=14, fig.height=6}
+home_prod_error_freq <- read.csv(here::here("Data", "home_prod_error_freq.csv"))
+
+plot_error_freq(
+  home_prod_error_freq,
+  use_facet = TRUE,
+  facet_two = "MODKOD",
+  fig_size = 10,
+  x_label_size = 8,
+  y_label_size = 10
+)
+```
+
+***
+* A hibaok relatív gyakorisága a **termékcsopoton belül** azt jelenti, hogy a vizsgált idõszakban (jelen esetben a legutolsó 3 hónapban) egy hibaok a **termékcsoport esetében számolt** összes hibaok mekkora hányadát tette ki, vagyis relatíve mennyire nagy a termékcsoporton belüli súlya
+* A teljes állományon számolt arányokon túl termékcsoportonként jelentõsen eltérõ okokat figyelhetünk meg, ezért fontos a hibaokokat termékenként értelmezni
+* Megfigyelhetõ, hogy a termékcsoportokra más-más hibaokok jellemzõek, jóllehet néhány esetében közös elõforduás is tapasztalható
+
+
 ### Ezen az ábrán az elmúlt 3 hónapban legtöbbször elõfordult **hibaokok gyakoriságának idõbeli alakulását** mutatjuk meg **a KGFB termékcsoportban** 
 
 ```{r, fig.width=14, fig.height=8}
@@ -231,6 +275,9 @@ plot_error_freq_ts(
 
 
 
+***
+* Egy adott hibaok gyakoriságának idõbeli alakulásából következtetni lehet olyan eseményekre, melyek befolyásolhatták egy adott hiba egyre gyakoribb, vagy egyre ritkább elõfordulását
+* A pontos beavatkozási területek meghatározásához ugyanakkor nem elegendõ a hibaokok külön-külön vizsgálata, hanem az egymással együtt elõforduló *mintázatok* vizsgálata szükséges
 
 Hibamintázatok {.storyboard data-navmenu="Tartalom"}
 =========================================
@@ -268,6 +315,30 @@ plot_error_pattern_freq(
   error_freq_pattern_prod,
   use_facet = TRUE,
   facet_two = "MODTYP",
+  fig_width = 14,
+  fig_height = 6,
+  x_label_size = 8,
+  y_label_size = 10
+)
+```
+
+***
+* A hibamintázat együttesen elõforduló hibaokok láncolatát jelenti
+* A hibamintázat pontosabb képet ad arról, hogy az automatikus menesztés miért vallott kudarcot
+* Vannak mintázatok, melyek mindössze egyetlen okból állnak
+* A hibamintázat relatív gyakorisága a termékcsoporton belülazt jelenti, hogy a vizsgált idõszakban (jelen esetben a legutolsó 3 hónapban) egy mintázat a termékcsport esetében megfigyelt összes mintázat mekkora hányadát tette ki, vagyis relatíve mennyire nagy a  termékcsoporton belüli súlya
+* A teljes állományon számolt arányokon túl termékcsoportonként jelentõsen eltérõ mintázatokat figyelhetünk meg, ezért fontos a mintázatokat termékenként értelmezni
+
+
+### Ezen az ábrán az elmúlt 3 hónapban legtöbbször elõfordult hibamintázatok relatív gyakoriságát mutatjuk meg az **LSZB** és **OKÉ** lakástermékeken 
+
+```{r, fig.width=14, fig.height=6}
+home_freq_pattern_prod <- read.csv(here::here("Data", "home_prod_freq_pattern.csv"))
+
+plot_error_pattern_freq(
+  home_freq_pattern_prod,
+  use_facet = TRUE,
+  facet_two = "MODKOD",
   fig_width = 14,
   fig_height = 6,
   x_label_size = 8,
