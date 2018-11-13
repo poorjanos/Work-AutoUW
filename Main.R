@@ -36,8 +36,8 @@ library(RJDBC)
 ablak <-
   config::get("ablak" , file = "C:\\Users\\PoorJ\\Projects\\config.yml")
 
-kontakt <-
-  config::get("kontakt" , file = "C:\\Users\\PoorJ\\Projects\\config.yml")
+datamnr <-
+  config::get("datamnr" , file = "C:\\Users\\PoorJ\\Projects\\config.yml")
 
 
 # Create connection driver
@@ -79,13 +79,13 @@ dbDisconnect(jdbcConnection)
 jdbcConnection <-
   dbConnect(
     jdbcDriver,
-    url = kontakt$server,
-    user = kontakt$uid,
-    password = kontakt$pwd
+    url = datamnr$server,
+    user = datamnr$uid,
+    password = datamnr$pwd
   )
 
 # Fetch data
-query_autouw_cost <- "select * from t_kpm_err_pattern_cost_history"
+query_autouw_cost <- "select * from t_kpm_err_pattern_cost"
 query_num_wdays <- "select * from t_mnap"
 
 autouw_cost <- dbGetQuery(jdbcConnection, query_autouw_cost)
