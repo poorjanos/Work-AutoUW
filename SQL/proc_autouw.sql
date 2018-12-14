@@ -18,7 +18,7 @@ BEGIN
       SELECT   DISTINCT f_vonalkod
         FROM   ab_t_akr_esemeny
        WHERE   f_datum BETWEEN ADD_MONTHS (TRUNC (SYSDATE, 'mm'), -1)
-                           AND  TRUNC (SYSDATE, 'mm') - 1
+                           AND  TRUNC (SYSDATE, 'mm')
                AND f_esemeny IN
                         ('01',
                          '31',
